@@ -2,7 +2,6 @@
   import { sidebar } from "$lib/state/sidebar.svelte";
   import {
     InterviewManager,
-    ROLES,
   } from "$lib/features/interview/interview.svelte";
   import {
     Play,
@@ -16,8 +15,21 @@
   import { fade, slide } from "svelte/transition";
   import { tick } from "svelte";
 
+  let { data } = $props();
+
   const manager = new InterviewManager();
   let transcriptContainer: HTMLDivElement | undefined = $state();
+
+  $effect(() => {
+    if (data.roles && data.roles.length > 0) {
+      manager.availableRoles = data.roles;
+      manager.availableModules = data.modules;
+      manager.userProgress = data.userProgress;
+      if (!manager.selectedRoleId) {
+        manager.selectedRoleId = data.roles[0].id;
+      }
+    }
+  });
 
   $effect(() => {
     if (manager.transcript.length > 0 && transcriptContainer) {
@@ -57,9 +69,12 @@
 
 <div class="flex flex-col h-[calc(100vh-5rem)]">
   <div class="flex justify-between items-center mb-8">
-    <h2 class="text-4xl font-bold text-blue-600">Interview</h2>
+    <div>
+      <h2 class="text-4xl font-bold text-blue-600">AI Interview Simulator</h2>
+      <p class="text-gray-500 mt-1">Latih kemampuan interview Anda dengan AI profesional</p>
+    </div>
     <div
-      class="px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-sm font-medium animate-pulse"
+      class="px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-sm font-medium {manager.connectionState === 'ready' ? 'animate-pulse' : ''}"
     >
       {manager.statusText}
     </div>
@@ -79,7 +94,7 @@
       <div
         class="bg-white rounded-[2.5rem] p-6 border border-gray-100 shadow-sm flex flex-col items-center justify-center space-y-6 h-full"
       >
-        <div class="flex items-center justify-center space-x-1 h-16">
+        <div class="flex items-center justify-center space-x-1 h-16 w-full">
           {#each Array(20) as _, i}
             <div
               class="w-2 bg-blue-500 rounded-full {isAnimating
@@ -96,12 +111,12 @@
           >
           <select
             id="role"
-            bind:value={manager.selectedRole}
+            bind:value={manager.selectedRoleId}
             disabled={manager.connectionState !== "idle"}
             class="w-full bg-gray-50 border-2 border-gray-100 text-gray-700 rounded-xl px-4 py-3 font-medium focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none transition-all disabled:opacity-50"
           >
-            {#each ROLES as role}
-              <option value={role}>{role}</option>
+            {#each data.roles as role}
+              <option value={role.id}>{role.role_name}</option>
             {/each}
           </select>
         </div>

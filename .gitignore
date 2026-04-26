@@ -1,5 +1,7 @@
 node_modules
 
+package-lock.json
+
 # Output
 .output
 .vercel
@@ -21,3 +23,6 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Wrangler
+wrangler.toml

@@ -1,9 +1,15 @@
 <script lang="ts">
-  import { MoveLeft, Mail, Lock, Eye } from "lucide-svelte";
+  import { MoveLeft, Mail, Lock, Eye, Loader2, AlertCircle } from "lucide-svelte";
+  import { enhance } from "$app/forms";
+  import { fade } from "svelte/transition";
+
+  let { form } = $props();
+  let showPassword = $state(false);
+  let isLoading = $state(false);
 </script>
 
 <svelte:head>
-  <title>Log In | Nama web kita</title>
+  <title>Log In | Skill Leap</title>
 </svelte:head>
 
 <div
@@ -24,7 +30,7 @@
     <h1
       class="text-[40px] font-bold text-[#111827] tracking-tight text-center px-12 leading-tight"
     >
-      Visual Space
+      Accelerate Your<br />Career Protocol
     </h1>
 
     <!-- Pagination Dots -->
@@ -50,11 +56,33 @@
         <h2 class="text-[28px] font-bold text-[#111827] mb-1 tracking-tight">
           Welcome Back
         </h2>
-        <p class="text-[#9CA3AF] text-sm font-medium">Isi apa ya</p>
+        <p class="text-[#9CA3AF] text-sm font-medium">Log in to your account</p>
+      </div>
+
+      <div class="h-[68px] mb-2 flex items-center">
+        {#if form?.error}
+          <div 
+            transition:fade 
+            class="w-full p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-medium"
+          >
+            <AlertCircle size={18} />
+            {form.error}
+          </div>
+        {/if}
       </div>
 
       <!-- Form -->
-      <form class="space-y-5" on:submit|preventDefault>
+      <form 
+        method="POST" 
+        use:enhance={() => {
+          isLoading = true;
+          return async ({ update }) => {
+            isLoading = false;
+            await update();
+          };
+        }} 
+        class="space-y-5"
+      >
         <!-- Email Field -->
         <div class="space-y-1.5">
           <label
@@ -70,6 +98,7 @@
             <input
               type="email"
               id="email"
+              name="email"
               class="w-full pl-12 pr-4 py-3 bg-white border border-[#E5E7EB] rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#3D5AFE]/5 focus:border-[#3D5AFE]/50 transition-all text-[14px] text-[#111827] placeholder:text-[#9CA3AF]"
               placeholder="xxx@email.com"
               required
@@ -96,14 +125,16 @@
               <Lock size={20} strokeWidth={1.5} />
             </div>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               id="password"
+              name="password"
               class="w-full pl-12 pr-12 py-3 bg-white border border-[#E5E7EB] rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#3D5AFE]/5 focus:border-[#3D5AFE]/50 transition-all text-[14px] text-[#111827] placeholder:text-[#9CA3AF]"
               placeholder="••••••••"
               required
             />
             <button
               type="button"
+              onclick={() => showPassword = !showPassword}
               class="absolute inset-y-0 right-0 pr-4 flex items-center text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
             >
               <Eye size={20} strokeWidth={1.5} />
@@ -130,9 +161,15 @@
         <div class="pt-2">
           <button
             type="submit"
-            class="w-full py-3.5 px-4 bg-[#3D5AFE] hover:bg-[#304FFE] text-white rounded-2xl font-bold text-[14px] transition-all shadow-lg shadow-[#3D5AFE]/10"
+            disabled={isLoading}
+            class="w-full py-3.5 px-4 bg-[#3D5AFE] hover:bg-[#304FFE] text-white rounded-2xl font-bold text-[14px] transition-all shadow-lg shadow-[#3D5AFE]/10 flex items-center justify-center gap-2 disabled:opacity-70"
           >
-            Sign In
+            {#if isLoading}
+              <Loader2 size={20} class="animate-spin" />
+              Processing...
+            {:else}
+              Sign In
+            {/if}
           </button>
         </div>
       </form>

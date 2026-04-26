@@ -12,14 +12,9 @@ const CONFIG = {
   RMS_THRESHOLD: 500
 };
 
-export const ROLES = ['Web Developer', 'Data Scientist', 'Cloud Engineer'] as const;
-export type Role = (typeof ROLES)[number];
-
-export const ROLE_MODULES: Record<Role, string[]> = {
-  'Web Developer': ['React & Next.js', 'State Management (Svelte)', 'API Integration'],
-  'Data Scientist': ['Python for Data Analysis', 'Machine Learning Models', 'SQL & Data Warehousing'],
-  'Cloud Engineer': ['AWS Infrastructure', 'Docker & Kubernetes', 'CI/CD Pipelines']
-};
+export type Role = { id: string; role_name: string };
+export type Module = { id: string; module_name: string; roadmap_id: string; module_order: number };
+export type UserProgress = { module_id: string; is_unlocked: boolean };
 
 export interface TranscriptEntry {
   id: string;
@@ -125,10 +120,24 @@ export class InterviewManager {
   isRecording = $state(false);
   isSpeaking = $state(false);
   transcript = $state<TranscriptEntry[]>([]);
-  selectedRole = $state<Role>('Web Developer');
+  availableRoles = $state<Role[]>([]);
+  availableModules = $state<Module[]>([]);
+  userProgress = $state<UserProgress[]>([]);
+  selectedRoleId = $state<string>('');
 
   // Adaptasi Role AI
-  completedModules = $derived(ROLE_MODULES[this.selectedRole].join(', '));
+  completedModules = $derived.by(() => {
+    const roleModules = this.availableModules.filter(m => m.roadmap_id === this.selectedRoleId);
+    const unlockedIds = new Set(this.userProgress.filter(p => p.is_unlocked).map(p => p.module_id));
+    return roleModules
+      .filter(m => unlockedIds.has(m.id))
+      .map(m => m.module_name)
+      .join(', ') || 'Dasar-dasar umum';
+  });
+
+  selectedRoleName = $derived(
+    this.availableRoles.find(r => r.id === this.selectedRoleId)?.role_name || 'Kandidat'
+  );
 
   private ws: WebSocket | null = null;
   private silenceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -242,13 +251,13 @@ export class InterviewManager {
         },
         systemInstruction: {
           parts: [{
-            text: `Anda adalah Pewawancara profesional untuk posisi ${this.selectedRole}.
+            text: `Anda adalah Pewawancara profesional untuk posisi ${this.selectedRoleName}.
             Kandidat sudah mempelajari: ${this.completedModules}.
 
             Struktur Wawancara (ikuti urutan ini secara ketat):
             1. PEMBUKA: Mulai dengan meminta kandidat memperkenalkan diri mereka.
             2. KEKUATAN & KELEMAHAN: Setelah perkenalan, tanyakan kelebihan dan kekurangan terbesar mereka.
-            3. KECOCOKAN: Tanyakan mengapa mereka yakin cocok untuk posisi ${this.selectedRole} ini.
+            3. KECOCOKAN: Tanyakan mengapa mereka yakin cocok untuk posisi ${this.selectedRoleName} ini.
             4. TEKNIS: Baru setelah tiga tahap di atas selesai, ajukan pertanyaan-pertanyaan teknis mendalam.
 
             Aturan Mutlak:

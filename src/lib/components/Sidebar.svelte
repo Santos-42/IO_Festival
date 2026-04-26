@@ -1,6 +1,8 @@
-<script>
+<script lang="ts">
   import { fade } from "svelte/transition";
   import { page } from "$app/stores";
+  import { enhance } from "$app/forms";
+  import { goto } from "$app/navigation";
   import {
     LayoutDashboard,
     GitBranch,
@@ -13,14 +15,42 @@
   } from "lucide-svelte";
   import { sidebar } from "$lib/state/sidebar.svelte";
 
+  let { user } = $props();
+
   const menuItems = [
-    { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-    { name: "Roadmap", icon: GitBranch, href: "/roadmap" },
-    { name: "Evaluation", icon: ClipboardList, href: "/evaluation" },
-    { name: "Interview", icon: MessageSquare, href: "/interview" },
+    { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard", restricted: false },
+    { name: "Roadmap", icon: GitBranch, href: "/roadmap", restricted: false },
+    { name: "Evaluation", icon: ClipboardList, href: "/evaluation", restricted: true },
+    { name: "Interview", icon: MessageSquare, href: "/interview", restricted: true },
   ];
 
+  function handleNav(e: MouseEvent, item: typeof menuItems[0]) {
+    if (item.restricted && !user?.hasActiveRoadmap) {
+      e.preventDefault();
+      goto('/roadmap');
+    }
+  }
+
   let activePath = $derived($page.url.pathname);
+
+  // Logic for display name (first 2 words)
+  let displayName = $derived.by(() => {
+    if (!user?.name) return "User";
+    const words = user.name.trim().split(/\s+/);
+    if (words.length <= 2) return user.name;
+    return words.slice(0, 2).join(" ");
+  });
+
+  // Initials for collapsed state
+  let initials = $derived.by(() => {
+    if (!user?.name) return "U";
+    return user.name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((w: string) => w[0].toUpperCase())
+      .join("");
+  });
 </script>
 
 <aside
@@ -51,6 +81,7 @@
       {@const Icon = item.icon}
       <a
         href={item.href}
+        onclick={(e) => handleNav(e, item)}
         class="flex items-center py-3 rounded-2xl transition-all duration-200 {sidebar.isCollapsed ? 'justify-center px-0' : 'space-x-3 px-4'} {activePath ===
         item.href
           ? 'bg-blue-500 text-white shadow-lg shadow-blue-200'
@@ -67,19 +98,25 @@
 
   <div class="p-4 border-t border-gray-50 space-y-2 overflow-hidden">
     <div class="flex items-center py-3 bg-blue-50 rounded-2xl transition-all {sidebar.isCollapsed ? 'justify-center px-0' : 'space-x-3 px-4'}">
-      <UserCircle size={24} class="text-gray-400 shrink-0" />
-      {#if !sidebar.isCollapsed}
-        <span class="font-medium text-gray-700 whitespace-nowrap" in:fade={{ duration: 200, delay: 100 }}>Username</span>
+      {#if sidebar.isCollapsed}
+        <span class="font-bold text-blue-600 text-sm" in:fade={{ duration: 200, delay: 100 }}>{initials}</span>
+      {:else}
+        <UserCircle size={24} class="text-gray-400 shrink-0" />
+        <span class="font-medium text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis" in:fade={{ duration: 200, delay: 100 }}>{displayName}</span>
       {/if}
     </div>
-    <button
-      class="w-full flex items-center py-3 text-gray-500 hover:bg-gray-50 rounded-2xl transition-all {sidebar.isCollapsed ? 'justify-center px-0' : 'space-x-3 px-4'}"
-      title={sidebar.isCollapsed ? "Log out" : ""}
-    >
-      <LogOut size={20} class="shrink-0" />
-      {#if !sidebar.isCollapsed}
-        <span class="font-medium whitespace-nowrap" in:fade={{ duration: 200, delay: 100 }}>Log out</span>
-      {/if}
-    </button>
+    
+    <form method="POST" action="/logout" use:enhance class="w-full">
+      <button
+        type="submit"
+        class="w-full flex items-center py-3 text-gray-500 hover:bg-gray-50 rounded-2xl transition-all {sidebar.isCollapsed ? 'justify-center px-0' : 'space-x-3 px-4'}"
+        title={sidebar.isCollapsed ? "Log out" : ""}
+      >
+        <LogOut size={20} class="shrink-0" />
+        {#if !sidebar.isCollapsed}
+          <span class="font-medium whitespace-nowrap" in:fade={{ duration: 200, delay: 100 }}>Log out</span>
+        {/if}
+      </button>
+    </form>
   </div>
 </aside>

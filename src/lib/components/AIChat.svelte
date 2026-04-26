@@ -1,11 +1,126 @@
-<script>
-  import { Sparkles, X, Send } from "lucide-svelte";
-  import { fade, scale } from "svelte/transition";
+<script lang="ts">
+  import { Sparkles, X, Send, PlusCircle } from "lucide-svelte";
+  import { fade, scale, slide } from "svelte/transition";
+  import { onMount, tick } from "svelte";
 
-  let isOpen = $state(false);
+  let { isOpen = $bindable(false) } = $props();
+
+  let messages = $state<{ role: 'ai' | 'user'; text: string }[]>([
+    { role: 'ai', text: "Hello! Saya AI Mentor Anda. Bagaimana saya bisa membantu perjalanan karir Anda hari ini?" }
+  ]);
+  let inputText = $state("");
+  let isLoading = $state(false);
+  let showRoadmapDropdown = $state(false);
+  let availableRoadmaps = $state<{ id: string; role_name: string }[]>([]);
+  let messageContainer: HTMLDivElement | undefined = $state();
+
+  onMount(async () => {
+    const res = await fetch('/api/roadmaps');
+    if (res.ok) {
+      availableRoadmaps = await res.json();
+    }
+  });
+
+  $effect(() => {
+    if (messages.length > 0 && messageContainer) {
+      tick().then(() => {
+        if (messageContainer) {
+          messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+      });
+    }
+  });
 
   function toggleChat() {
     isOpen = !isOpen;
+  }
+
+  function formatMessage(text: string) {
+    // Simple bold markdown **text** -> <strong>text</strong>
+    let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // Simple line breaks
+    formatted = formatted.replace(/\n/g, '<br/>');
+    return formatted;
+  }
+
+  async function sendMessage() {
+    if (!inputText.trim() || isLoading) return;
+
+    const userMessage = inputText;
+    inputText = "";
+    showRoadmapDropdown = false;
+    messages = [...messages, { role: 'user', text: userMessage }];
+    
+    isLoading = true;
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userMessage,
+          chatHistory: messages.slice(0, -1)
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const fullText = data.text;
+        
+        // Push empty AI message first
+        const aiMsgIndex = messages.length;
+        messages = [...messages, { role: 'ai', text: "" }];
+        
+        // Typewriter effect
+        const words = fullText.split(' ');
+        let currentWordIndex = 0;
+        
+        const typeInterval = setInterval(() => {
+          if (currentWordIndex < words.length) {
+            messages[aiMsgIndex].text += (currentWordIndex === 0 ? "" : " ") + words[currentWordIndex];
+            currentWordIndex++;
+            
+            // Auto-scroll during typing
+            if (messageContainer) {
+              messageContainer.scrollTop = messageContainer.scrollHeight;
+            }
+          } else {
+            clearInterval(typeInterval);
+          }
+        }, 40); // 40ms per word
+      } else {
+        messages = [...messages, { role: 'ai', text: "Maaf, saya sedang mengalami kendala teknis." }];
+      }
+    } catch (err) {
+      messages = [...messages, { role: 'ai', text: "Gagal terhubung ke server AI." }];
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  function handleCreateRoadmap() {
+    inputText = "Create roadmap: ";
+    showRoadmapDropdown = true;
+  }
+
+  const roadmapPrefix = "Create roadmap: ";
+  let filteredRoadmaps = $derived.by(() => {
+    if (!inputText.startsWith(roadmapPrefix)) return [];
+    const query = inputText.slice(roadmapPrefix.length).toLowerCase().trim();
+    if (!query) return availableRoadmaps;
+    return availableRoadmaps.filter(r => r.role_name.toLowerCase().includes(query));
+  });
+
+  $effect(() => {
+    if (inputText.startsWith(roadmapPrefix) && filteredRoadmaps.length > 0) {
+      showRoadmapDropdown = true;
+    } else {
+      showRoadmapDropdown = false;
+    }
+  });
+
+  function selectRoadmap(roleName: string) {
+    inputText = "Create roadmap: " + roleName;
+    showRoadmapDropdown = false;
   }
 </script>
 
@@ -32,40 +147,79 @@
         </button>
       </div>
 
-      <!-- Messages Area (Placeholder) -->
+      <!-- Messages Area -->
       <div
         class="flex-1 p-4 overflow-y-auto bg-gray-50 flex flex-col space-y-4"
+        bind:this={messageContainer}
       >
-        <!-- AI Message -->
-        <div
-          class="bg-blue-600 text-white p-3 rounded-2xl rounded-tl-none self-start max-w-[80%] text-sm text-left"
+        {#each messages as msg}
+          <div
+            class="p-3 rounded-2xl text-sm leading-relaxed shadow-sm
+            {msg.role === 'ai' 
+               ? 'bg-blue-600 text-white rounded-tl-none self-start text-left' 
+               : 'bg-white text-gray-800 rounded-tr-none self-end text-left border border-gray-100'}"
+          >
+            {#if msg.role === 'ai'}
+              {@html formatMessage(msg.text)}
+            {:else}
+              {msg.text}
+            {/if}
+          </div>
+        {/each}
+
+        {#if isLoading}
+          <div class="bg-blue-50 text-blue-600 p-3 rounded-2xl rounded-tl-none self-start text-sm animate-pulse">
+            AI sedang berpikir...
+          </div>
+        {/if}
+      </div>
+
+      <!-- Action Area -->
+      <div class="px-4 py-2 bg-gray-50 flex justify-start">
+        <button 
+          onclick={handleCreateRoadmap}
+          class="flex items-center space-x-1 text-[10px] font-bold uppercase tracking-wider text-blue-600 hover:text-blue-700 transition-colors bg-blue-50 px-3 py-1 rounded-full"
         >
-          Hello! I'm your AI Skill Assistant. How can I help you build your
-          Skill Leap today?
-        </div>
-        
-        <!-- User Message Placeholder -->
-        <div
-          class="bg-gray-200 text-black p-3 rounded-2xl rounded-tr-none self-end max-w-[80%] text-sm text-left"
-        >
-          I want to learn more about SvelteKit.
-        </div>
+          <PlusCircle size={12} />
+          <span>Create Roadmap</span>
+        </button>
       </div>
 
       <!-- Input Area -->
-      <div
-        class="p-4 bg-white border-t border-gray-100 flex items-center space-x-2"
-      >
-        <input
-          type="text"
-          placeholder="Ask me anything..."
-          class="flex-1 bg-gray-100 border-none rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-        />
-        <button
-          class="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors"
-        >
-          <Send size={16} />
-        </button>
+      <div class="relative p-4 bg-white border-t border-gray-100">
+        <!-- Roadmap Dropdown -->
+        {#if filteredRoadmaps.length > 0 && showRoadmapDropdown}
+          <div 
+            transition:slide
+            class="absolute bottom-full left-4 right-4 mb-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-10 max-h-40 overflow-y-auto"
+          >
+            {#each filteredRoadmaps as roadmap}
+              <button
+                onclick={() => selectRoadmap(roadmap.role_name)}
+                class="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 transition-colors text-gray-700 border-b border-gray-50 last:border-0"
+              >
+                {roadmap.role_name}
+              </button>
+            {/each}
+          </div>
+        {/if}
+
+        <form class="flex items-center space-x-2" onsubmit={(e) => { e.preventDefault(); sendMessage(); }}>
+          <input
+            type="text"
+            bind:value={inputText}
+            placeholder="Ask me anything..."
+            class="flex-1 bg-gray-100 border-none rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            onfocus={() => { if (inputText.startsWith("Create roadmap: ")) showRoadmapDropdown = true; }}
+          />
+          <button
+            type="submit"
+            class="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50"
+            disabled={isLoading || !inputText.trim()}
+          >
+            <Send size={16} />
+          </button>
+        </form>
       </div>
     </div>
   {/if}

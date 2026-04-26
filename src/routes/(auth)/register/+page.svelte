@@ -1,9 +1,15 @@
 <script lang="ts">
-  import { MoveLeft, User, Mail, Lock, RefreshCw } from "lucide-svelte";
+  import { MoveLeft, User, Mail, Lock, RefreshCw, Loader2, AlertCircle, Eye, EyeOff } from "lucide-svelte";
+  import { enhance } from "$app/forms";
+  import { fade } from "svelte/transition";
+
+  let { form } = $props();
+  let isLoading = $state(false);
+  let showPassword = $state(false);
 </script>
 
 <svelte:head>
-  <title>Register | Nama web kita</title>
+  <title>Register | Skill Leap</title>
 </svelte:head>
 
 <div
@@ -35,19 +41,29 @@
         </p>
       </div>
 
+      {#if form?.error}
+        <div 
+          transition:fade 
+          class="mb-5 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-medium"
+        >
+          <AlertCircle size={18} />
+          {form.error}
+        </div>
+      {/if}
+
       <!-- Social Sign Up -->
-      <div class="space-y-2 mb-5">
+      <div class="grid grid-cols-2 gap-3 mb-5">
         <button
           type="button"
-          class="w-full flex items-center justify-center py-2.5 px-4 border border-gray-200 bg-white rounded-full hover:bg-gray-50 transition-colors text-[13px] font-bold text-[#374151] shadow-sm"
+          class="flex items-center justify-center py-2.5 px-4 border border-gray-200 bg-white rounded-full hover:bg-gray-50 transition-colors text-[13px] font-bold text-[#374151] shadow-sm"
         >
-          Sign up with Google
+          Google
         </button>
         <button
           type="button"
-          class="w-full flex items-center justify-center py-2.5 px-4 border border-gray-200 bg-white rounded-full hover:bg-gray-50 transition-colors text-[13px] font-bold text-[#374151] shadow-sm"
+          class="flex items-center justify-center py-2.5 px-4 border border-gray-200 bg-white rounded-full hover:bg-gray-50 transition-colors text-[13px] font-bold text-[#374151] shadow-sm"
         >
-          Sign up with Facebook
+          Facebook
         </button>
       </div>
 
@@ -63,7 +79,17 @@
       </div>
 
       <!-- Form -->
-      <form class="space-y-4" on:submit|preventDefault>
+      <form 
+        method="POST" 
+        use:enhance={() => {
+          isLoading = true;
+          return async ({ update }) => {
+            isLoading = false;
+            await update();
+          };
+        }} 
+        class="space-y-4"
+      >
         <!-- Full Name -->
         <div class="space-y-1.5">
           <label
@@ -80,8 +106,9 @@
             <input
               type="text"
               id="name"
+              name="name"
               class="w-full pl-11 pr-4 py-2.5 bg-white border border-[#E5E7EB] rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#3D5AFE]/5 focus:border-[#3D5AFE]/50 transition-all text-[14px] text-[#111827] placeholder:text-[#9CA3AF]"
-              placeholder="XXX"
+              placeholder="Your Full Name"
               required
             />
           </div>
@@ -103,15 +130,16 @@
             <input
               type="email"
               id="email"
+              name="email"
               class="w-full pl-11 pr-4 py-2.5 bg-white border border-[#E5E7EB] rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#3D5AFE]/5 focus:border-[#3D5AFE]/50 transition-all text-[14px] text-[#111827] placeholder:text-[#9CA3AF]"
-              placeholder="XXX"
+              placeholder="xxx@email.com"
               required
             />
           </div>
         </div>
 
-        <!-- Password Row (side by side) -->
-        <div class="grid grid-cols-2 gap-3">
+        <!-- Password (stacked) -->
+        <div class="space-y-4">
           <div class="space-y-1.5">
             <label
               for="password"
@@ -125,19 +153,31 @@
                 <Lock size={16} strokeWidth={1.5} />
               </div>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 id="password"
-                class="w-full pl-10 pr-3 py-2.5 bg-white border border-[#E5E7EB] rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#3D5AFE]/5 focus:border-[#3D5AFE]/50 transition-all text-[14px] text-[#111827] placeholder:text-[#9CA3AF]"
+                name="password"
+                class="w-full pl-10 pr-10 py-2.5 bg-white border border-[#E5E7EB] rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#3D5AFE]/5 focus:border-[#3D5AFE]/50 transition-all text-[14px] text-[#111827] placeholder:text-[#9CA3AF]"
                 placeholder="••••••••"
                 required
               />
+              <button
+                type="button"
+                onclick={() => showPassword = !showPassword}
+                class="absolute inset-y-0 right-0 pr-3 flex items-center text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
+              >
+                {#if showPassword}
+                  <EyeOff size={16} strokeWidth={1.5} />
+                {:else}
+                  <Eye size={16} strokeWidth={1.5} />
+                {/if}
+              </button>
             </div>
           </div>
           <div class="space-y-1.5">
             <label
               for="confirm"
               class="block text-[13px] font-bold text-[#374151] ml-1"
-              >Confirm</label
+              >Confirm Password</label
             >
             <div class="relative">
               <div
@@ -148,6 +188,7 @@
               <input
                 type="password"
                 id="confirm"
+                name="confirm"
                 class="w-full pl-10 pr-3 py-2.5 bg-white border border-[#E5E7EB] rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#3D5AFE]/5 focus:border-[#3D5AFE]/50 transition-all text-[14px] text-[#111827] placeholder:text-[#9CA3AF]"
                 placeholder="••••••••"
                 required
@@ -184,9 +225,15 @@
         <div class="pt-1">
           <button
             type="submit"
-            class="w-full py-3.5 px-4 bg-[#3D5AFE] hover:bg-[#304FFE] text-white rounded-2xl font-bold text-[14px] transition-all shadow-lg shadow-[#3D5AFE]/10 active:scale-[0.98]"
+            disabled={isLoading}
+            class="w-full py-3.5 px-4 bg-[#3D5AFE] hover:bg-[#304FFE] text-white rounded-2xl font-bold text-[14px] transition-all shadow-lg shadow-[#3D5AFE]/10 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70"
           >
-            Create Account
+            {#if isLoading}
+              <Loader2 size={20} class="animate-spin" />
+              Creating Account...
+            {:else}
+              Create Account
+            {/if}
           </button>
         </div>
       </form>
