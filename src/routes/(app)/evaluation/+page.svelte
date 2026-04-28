@@ -1,6 +1,7 @@
 <script lang="ts">
   import { fade, slide } from "svelte/transition";
   import { ClipboardList, Sparkles, Send, RotateCcw, CheckCircle2, XCircle, AlertCircle, Loader2 } from "lucide-svelte";
+  import { invalidateAll } from "$app/navigation";
 
   let { data } = $props();
 
@@ -62,6 +63,8 @@
       
       evaluationResult = await res.json();
       currentState = "result";
+      // Auto-refresh past evaluations list
+      await invalidateAll();
     } catch (err: any) {
       errorMsg = err.message;
       currentState = "active";

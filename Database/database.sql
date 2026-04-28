@@ -81,3 +81,52 @@ CREATE TABLE evaluations (
     FOREIGN KEY (user_roadmap_id) REFERENCES user_roadmaps(id) ON DELETE CASCADE,
     FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
 );
+
+-- 9. Tabel Quiz Attempts (Sumber Kebenaran Utama - Server-Side Grading)
+CREATE TABLE quiz_attempts (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    module_id TEXT NOT NULL,
+    attempt_number INTEGER NOT NULL DEFAULT 1,
+    questions_data TEXT NOT NULL,        
+    answers_data TEXT,                   
+    status TEXT NOT NULL DEFAULT 'active', 
+    score INTEGER,
+    expires_at DATETIME NOT NULL,
+    submitted_at DATETIME,
+    failed_at DATETIME,                  
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+);
+
+-- 10. Tabel Quiz Results (Bukti Kelulusan Modul)
+CREATE TABLE quiz_results (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    module_id TEXT NOT NULL,
+    score INTEGER NOT NULL,
+    passed BOOLEAN NOT NULL DEFAULT FALSE,
+    attempt_count INTEGER NOT NULL DEFAULT 1,
+    completed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE,
+    UNIQUE(user_id, module_id)
+);
+
+-- 11. Tabel Checkpoint Attempts (Micro-Checkpoint per Material)
+CREATE TABLE checkpoint_attempts (
+    id TEXT PRIMARY KEY,                  
+    user_id TEXT NOT NULL,
+    material_id TEXT NOT NULL,
+    module_id TEXT NOT NULL,
+    question TEXT NOT NULL,
+    answer_key TEXT NOT NULL,            
+    status TEXT NOT NULL DEFAULT 'active', 
+    hint TEXT,                            
+    failed_at DATETIME,                   
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE CASCADE,
+    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+);

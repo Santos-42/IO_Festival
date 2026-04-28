@@ -1,8 +1,11 @@
 <script lang="ts">
-  import { Play, ArrowLeft, ArrowRight, ChevronLeft } from "lucide-svelte";
+  import { Play, ArrowLeft, ArrowRight, ChevronLeft, FileText } from "lucide-svelte";
   import { fade } from "svelte/transition";
+  import CheckpointGate from "$lib/components/CheckpointGate.svelte";
 
   let { data } = $props();
+
+  let checkpointPassed = $state(false);
 
   // Parse YouTube video ID from URL
   function getYouTubeId(url: string) {
@@ -42,6 +45,9 @@
 
   const prevMaterial = $derived(data.currentIndex > 0 ? data.allMaterials[data.currentIndex - 1] : null);
   const nextMaterial = $derived(data.currentIndex < data.totalMaterials - 1 ? data.allMaterials[data.currentIndex + 1] : null);
+
+  // Check if this is the last material of the module
+  const isLastInModule = $derived(data.isLastInModule || false);
 </script>
 
 <div class="max-w-5xl mx-auto space-y-8 pb-20">
@@ -96,37 +102,73 @@
   </div>
 
   <!-- Navigation -->
-  <div class="flex items-center justify-between gap-4 pt-4">
-    {#if prevMaterial}
-      <a 
-        href="/roadmap/{prevMaterial.id}"
-        class="flex-1 flex items-center justify-center space-x-3 bg-white border-2 border-gray-100 hover:border-blue-500 hover:text-blue-600 text-gray-600 px-6 py-5 rounded-[2rem] font-black transition-all group"
-      >
-        <ArrowLeft size={20} class="group-hover:-translate-x-1 transition-transform" />
-        <div class="text-left">
-          <p class="text-[10px] uppercase tracking-widest opacity-50">Sebelumnya</p>
-          <p class="truncate max-w-[200px]">{prevMaterial.title}</p>
-        </div>
-      </a>
-    {:else}
-      <div class="flex-1"></div>
+  <div class="space-y-6 pt-4">
+    <!-- Checkpoint Gate (shown before Next button when not yet passed) -->
+    {#if nextMaterial && !checkpointPassed}
+      <CheckpointGate materialId={data.material.id} onPass={() => checkpointPassed = true} />
     {/if}
 
-    {#if nextMaterial}
-      <form action="?/markComplete" method="POST" class="flex-1">
-        <button 
-          type="submit"
-          class="w-full flex items-center justify-center space-x-3 bg-blue-600 hover:bg-blue-700 text-white px-6 py-5 rounded-[2rem] font-black transition-all shadow-xl shadow-blue-200 group"
-        >
-          <div class="text-right">
-            <p class="text-[10px] uppercase tracking-widest opacity-70">Selanjutnya</p>
-            <p class="truncate max-w-[200px]">{nextMaterial.title}</p>
+    <!-- Quiz Button (shown after last material) -->
+    {#if isLastInModule && !nextMaterial}
+      <div class="bg-white rounded-[2.5rem] p-6 border-2 border-blue-100 shadow-lg shadow-blue-50/50" in:fade>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
+              <FileText size={24} class="text-blue-600" />
+            </div>
+            <div>
+              <h4 class="font-black text-gray-800">Quiz Akhir Modul</h4>
+              <p class="text-sm text-gray-500">Uji pemahaman Anda untuk modul ini</p>
+            </div>
           </div>
-          <ArrowRight size={20} class="group-hover:translate-x-1 transition-transform" />
-        </button>
-      </form>
-    {:else}
-      <div class="flex-1"></div>
+          <a
+            href="/roadmap/{data.moduleId}/quiz"
+            class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold transition-all shadow-lg shadow-blue-200"
+          >
+            Mulai Quiz
+          </a>
+        </div>
+      </div>
     {/if}
+
+    <!-- Prev / Next Buttons -->
+    <div class="flex items-center justify-between gap-4">
+      {#if prevMaterial}
+        <a 
+          href="/roadmap/{prevMaterial.id}"
+          class="flex-1 flex items-center justify-center space-x-3 bg-white border-2 border-gray-100 hover:border-blue-500 hover:text-blue-600 text-gray-600 px-6 py-5 rounded-[2rem] font-black transition-all group"
+        >
+          <ArrowLeft size={20} class="group-hover:-translate-x-1 transition-transform" />
+          <div class="text-left">
+            <p class="text-[10px] uppercase tracking-widest opacity-50">Sebelumnya</p>
+            <p class="truncate max-w-[200px]">{prevMaterial.title}</p>
+          </div>
+        </a>
+      {:else}
+        <div class="flex-1"></div>
+      {/if}
+
+      {#if nextMaterial}
+        <form action="?/markComplete" method="POST" class="flex-1">
+          <button 
+            type="submit"
+            disabled={!checkpointPassed}
+            class="w-full flex items-center justify-center space-x-3 px-6 py-5 rounded-[2rem] font-black transition-all group
+              {checkpointPassed
+                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-200'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }"
+          >
+            <div class="text-right">
+              <p class="text-[10px] uppercase tracking-widest opacity-70">Selanjutnya</p>
+              <p class="truncate max-w-[200px]">{nextMaterial.title}</p>
+            </div>
+            <ArrowRight size={20} class="group-hover:translate-x-1 transition-transform" />
+          </button>
+        </form>
+      {:else}
+        <div class="flex-1"></div>
+      {/if}
+    </div>
   </div>
 </div>

@@ -1,7 +1,7 @@
 <script lang="ts">
   import AIChat from "$lib/components/AIChat.svelte";
   import { onMount } from "svelte";
-  import { Sparkles, ArrowRight, BookOpen, Compass, Play, Lock } from "lucide-svelte";
+  import { Sparkles, ArrowRight, BookOpen, Compass, Play, Lock, CheckCircle2, FileText } from "lucide-svelte";
   import { fade, slide, scale } from "svelte/transition";
 
   let { data } = $props();
@@ -133,11 +133,23 @@
               <button 
                 onclick={() => expandedModuleId = isExpanded ? null : module.id}
                 class="flex items-center justify-between text-left group"
+                disabled={!module.is_unlocked}
               >
-                <h4 class="text-lg font-bold transition-all group-hover:text-blue-600 
-                  {module.is_unlocked ? 'text-gray-800' : 'text-gray-400'}">
-                  {module.module_name}
-                </h4>
+                <div class="flex items-center space-x-2">
+                  <h4 class="text-lg font-bold transition-all group-hover:text-blue-600 
+                    {module.is_unlocked ? 'text-gray-800' : 'text-gray-400'}">
+                    {module.module_name}
+                  </h4>
+                  {#if module.quizPassed}
+                    <div class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-black flex items-center space-x-1">
+                      <CheckCircle2 size={10} />
+                      <span>LULUS</span>
+                    </div>
+                  {/if}
+                  {#if module.lockReason}
+                    <span class="text-[10px] text-red-400 font-medium italic ml-2">{module.lockReason}</span>
+                  {/if}
+                </div>
                 <div class="text-gray-400 group-hover:text-blue-600 transition-transform {isExpanded ? 'rotate-180' : ''}">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
@@ -170,6 +182,18 @@
                   {/each}
                   {#if module.materials.length === 0}
                     <p class="text-xs text-gray-400 italic ml-4">Belum ada materi di modul ini.</p>
+                  {/if}
+
+                  <!-- Quiz CTA -->
+                  {#if module.allMaterialsUnlocked && module.is_unlocked && !module.quizPassed}
+                    <a
+                      href="/roadmap/{module.id}/quiz"
+                      class="flex items-center justify-center space-x-3 p-4 mt-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all shadow-lg shadow-blue-200 group"
+                    >
+                      <FileText size={18} />
+                      <span>Quiz Akhir Modul</span>
+                      <ArrowRight size={16} class="group-hover:translate-x-1 transition-transform" />
+                    </a>
                   {/if}
                 </div>
               {/if}

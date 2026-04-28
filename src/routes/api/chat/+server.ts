@@ -98,6 +98,10 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
   }
 
   // 3. Prepare AI Instruction
+  const platformIdentity = `Kamu adalah Asisten AI resmi untuk platform **Skill Leap**. Skill Leap adalah platform pembelajaran dan pengembangan karir adaptif yang menyediakan roadmap belajar yang di-generate oleh AI, fitur micro-checkpoint untuk validasi pemahaman, kuis evaluasi mingguan, serta simulasi interview/evaluasi AI interaktif. Jika user bertanya tentang Skill Leap atau apa itu platform ini, jelaskan fitur-fitur utama ini dengan ramah dan profesional.
+
+`;
+
   const formattingRules = `
 FORMATTING RULES:
 1. Jawablah dengan SANGAT singkat dan to the point.
@@ -114,10 +118,12 @@ FORMATTING RULES:
   } else {
     const { results: allRoadmaps } = await platform!.env.DB.prepare('SELECT role_name FROM roadmaps').all();
     const roles = allRoadmaps.map((r: any) => r.role_name).join(', ');
-    baseInstruction = `Anda adalah mentor karir profesional. User belum memilih roadmap. Anda bisa berdiskusi tentang pilihan karir berikut: ${roles}. Bantu user memilih roadmap yang tepat.`;
+    baseInstruction = `Anda adalah mentor karir profesional. User belum memilih roadmap. Anda bisa berdiskusi tentang pilihan karir berikut: ${roles}. Bantu user memilih roadmap yang tepat.
+
+Jika user menunjukkan ketertarikan untuk mempelajari suatu role atau bidang yang tersedia di daftar di atas, beri tahu user bahwa sistem dapat membuatkan roadmap belajarnya. Minta user untuk mengetik pesan dengan format pasti: **"Create roadmap: [Nama Role]"**.`;
   }
 
-  const systemInstruction = baseInstruction + formattingRules;
+  const systemInstruction = platformIdentity + baseInstruction + formattingRules;
 
   // 4. Gemini API Call (New SDK @google/genai)
   const ai = new GoogleGenAI({ apiKey: env.Gemma_Chatbot });

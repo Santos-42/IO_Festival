@@ -43,11 +43,32 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
     .bind(userId)
     .all();
 
+  // 5. Fetch quiz results for all modules
+  const { results: quizResults } = await platform!.env.DB.prepare(
+    'SELECT module_id, passed, score FROM quiz_results WHERE user_id = ?'
+  )
+    .bind(userId)
+    .all();
+
   // Enriched data: Nest materials into modules and extract titles
-  const enrichedModules = (modules as any[]).map(mod => {
+  // Build lookup for quiz results of PREVIOUS module
+  const quizPassedMap = new Map<string, boolean>();
+  (quizResults as any[]).forEach(qr => quizPassedMap.set(qr.module_id, qr.passed));
+
+  const enrichedModules = (modules as any[]).map((mod, idx) => {
     const modProgress = (progress as any[]).find(p => p.module_id === mod.id);
     const isModuleUnlocked = modProgress?.is_unlocked || false;
     const currentMaterialId = modProgress?.current_material_id;
+
+    // Determine lock reason: if not unlocked and previous module exists, check quiz
+    let lockReason = '';
+    if (!isModuleUnlocked && idx > 0) {
+      const prevModule = (modules as any[])[idx - 1];
+      const prevQuizPassed = quizPassedMap.get(prevModule.id) || false;
+      if (!prevQuizPassed) {
+        lockReason = 'Lulus kuis Modul sebelumnya untuk membuka';
+      }
+    }
 
     const moduleMaterials = (allMaterials as any[])
       .filter(mat => mat.module_id === mod.id)
@@ -74,10 +95,18 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
         return { ...mat, title, is_locked };
       });
 
+    // Determine if all materials in this module are unlocked (none locked)
+    const allUnlocked = moduleMaterials.every(m => !m.is_locked);
+    const quizResult = (quizResults as any[])?.find(qr => qr.module_id === mod.id);
+
     return {
       ...mod,
       materials: moduleMaterials,
-      is_unlocked: isModuleUnlocked
+      is_unlocked: isModuleUnlocked,
+      allMaterialsUnlocked: allUnlocked,
+      quizPassed: quizResult?.passed || false,
+      quizScore: quizResult?.score || null,
+      lockReason
     };
   });
 

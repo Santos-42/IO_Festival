@@ -84,3 +84,121 @@ INSERT INTO evaluations (id, user_roadmap_id, module_id, user_answer, ai_score, 
 ('ev-001', 'ur-001', 'md-web-1', 'Margin itu jarak luar tembok, padding jarak dari isi ke tembok.', 90, 'PASS', 'Analogi Anda sangat tepat! Anda siap lanjut ke materi JavaScript.');
 
 
+-- ============================================================
+-- Seed Data: Mock Quiz Attempts, Quiz Results, Checkpoint Attempts
+-- Digunakan untuk pengujian progress bar di Dashboard
+-- ============================================================
+-- CATATAN: Ganti placeholder IDs (u-*, m-*, mat-*, dll) dengan 
+-- ID aktual dari user/module/material yang ada di database Anda.
+
+-- ============================================================
+-- 1. Mock Data Quiz Attempts (user telah mencoba dan lulus kuis)
+-- ============================================================
+INSERT INTO quiz_attempts (id, user_id, module_id, attempt_number, questions_data, answers_data, status, score, expires_at, submitted_at, failed_at, created_at)
+VALUES 
+-- Attempt 1: Passed (Module 1)
+(
+  'qa-mock-01', 'u-001', 'md-web-1', 1,
+  '[{"question":"Apa itu HTML?","options":["A. Bahasa markup","B. Bahasa pemrograman","C. Database","D. Server"],"correct_index":0},{"question":"CSS digunakan untuk?","options":["A. Logika","B. Styling","C. Data","D. Routing"],"correct_index":1}]',
+  '[0,1]',
+  'passed', 100,
+  '2025-12-31T23:59:59Z', '2025-01-15T10:00:00Z', NULL,
+  '2025-01-15T09:45:00Z'
+),
+-- Attempt 2: Failed first, then passed (Module 2)  
+(
+  'qa-mock-02a', 'u-001', 'md-web-2', 1,
+  '[{"question":"Apa itu JavaScript?","options":["A. Framework","B. Bahasa scripting","C. CSS preprocessor","D. Database"],"correct_index":1}]',
+  '[2]',
+  'failed', 0,
+  '2025-12-31T23:59:59Z', '2025-01-16T11:00:00Z', '2025-01-16T11:00:00Z',
+  '2025-01-16T10:45:00Z'
+),
+(
+  'qa-mock-02b', 'u-001', 'md-web-2', 2,
+  '[{"question":"Apa itu JavaScript?","options":["A. Framework","B. Bahasa scripting","C. CSS preprocessor","D. Database"],"correct_index":1},{"question":"Apa itu DOM?","options":["A. Data Object Model","B. Document Object Model","C. Digital Output Manager","D. Domain Object Mapper"],"correct_index":1}]',
+  '[1,1]',
+  'passed', 100,
+  '2025-12-31T23:59:59Z', '2025-01-16T12:00:00Z', NULL,
+  '2025-01-16T11:30:00Z'
+);
+
+-- ============================================================
+-- 2. Mock Data Quiz Results (2 modul sudah lulus kuis)
+-- ============================================================
+INSERT INTO quiz_results (id, user_id, module_id, score, passed, attempt_count, completed_at)
+VALUES 
+('qr-mock-01', 'u-001', 'md-web-1', 100, TRUE, 1, '2025-01-15T10:00:00Z'),
+('qr-mock-02', 'u-001', 'md-web-2', 100, TRUE, 2, '2025-01-16T12:00:00Z');
+
+-- ============================================================
+-- 3. Mock Data Checkpoint Attempts (3 checkpoint sudah lulus)
+-- ============================================================
+INSERT INTO checkpoint_attempts (id, user_id, material_id, module_id, question, answer_key, status, hint, failed_at, created_at)
+VALUES 
+-- Module 1: 2 checkpoint passed
+(
+  'cp-mock-01', 'u-001', 'mat-w1-1', 'md-web-1',
+  'Jelaskan perbedaan antara HTML dan CSS.',
+  'HTML adalah bahasa markup untuk struktur, CSS adalah stylesheet untuk tampilan.',
+  'passed', NULL, NULL,
+  '2025-01-14T10:00:00Z'
+),
+(
+  'cp-mock-02', 'u-001', 'mat-w1-2', 'md-web-1',
+  'Apa fungsi tag <div> dalam HTML?',
+  'Div digunakan sebagai container blok untuk mengelompokkan elemen.',
+  'passed', NULL, NULL,
+  '2025-01-14T11:00:00Z'
+),
+-- Module 2: 1 checkpoint passed
+(
+  'cp-mock-04', 'u-001', 'mat-w2-1', 'md-web-2',
+  'Apa itu variabel dalam JavaScript?',
+  'Variabel adalah wadah penyimpanan data yang dapat diubah nilainya.',
+  'passed', NULL, NULL,
+  '2025-01-15T10:00:00Z'
+);
+
+-- ============================================================
+-- 4. Mock Data Data Analyst (User u-002)
+-- ============================================================
+INSERT INTO quiz_attempts (id, user_id, module_id, attempt_number, questions_data, answers_data, status, score, expires_at, submitted_at, failed_at, created_at)
+VALUES 
+(
+  'qa-mock-03', 'u-002', 'md-data-1', 1,
+  '[{"question":"Apa fungsi utama Microsoft Excel dalam analisis data?","options":["A. Edit foto","B. Pemrosesan spreadsheet & Kalkulasi","C. Manajemen Server","D. Desain grafis"],"correct_index":1},{"question":"Mengapa SQL krusial untuk data analyst?","options":["A. Untuk membuat website","B. Untuk komunikasi dengan database relasional","C. Untuk kompilasi program","D. Untuk styling UI"],"correct_index":1}]',
+  '[1,1]',
+  'passed', 100,
+  '2025-12-31T23:59:59Z', '2025-02-10T10:00:00Z', NULL,
+  '2025-02-10T09:45:00Z'
+);
+
+INSERT INTO quiz_results (id, user_id, module_id, score, passed, attempt_count, completed_at)
+VALUES 
+('qr-mock-03', 'u-002', 'md-data-1', 100, TRUE, 1, '2025-02-10T10:00:00Z');
+
+INSERT INTO checkpoint_attempts (id, user_id, material_id, module_id, question, answer_key, status, hint, failed_at, created_at)
+VALUES 
+(
+  'cp-mock-data-01', 'u-002', 'mat-d1-1', 'md-data-1',
+  'Mengapa SQL sangat penting bagi Data Analyst?',
+  'Karena sebagian besar data perusahaan disimpan di database relasional dan SQL adalah cara mengekstraksinya.',
+  'passed', NULL, NULL,
+  '2025-02-09T10:00:00Z'
+),
+(
+  'cp-mock-data-02', 'u-002', 'mat-d1-2', 'md-data-1',
+  'Sebutkan kegunaan fitur Text to Columns di Excel.',
+  'Digunakan untuk memecah teks yang tergabung dalam satu kolom menjadi beberapa kolom terpisah.',
+  'passed', NULL, NULL,
+  '2025-02-09T12:00:00Z'
+),
+(
+  'cp-mock-data-03', 'u-002', 'mat-d1-3', 'md-data-1',
+  'Apa keunggulan utama dari Pivot Table?',
+  'Mampu merangkum dan mengkategorikan kumpulan data yang sangat besar dalam hitungan detik.',
+  'passed', NULL, NULL,
+  '2025-02-09T15:00:00Z'
+);
+

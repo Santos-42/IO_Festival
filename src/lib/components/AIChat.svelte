@@ -2,7 +2,7 @@
   import { Sparkles, X, Send, PlusCircle } from "lucide-svelte";
   import { fade, scale, slide } from "svelte/transition";
   import { onMount, tick } from "svelte";
-  import { goto } from "$app/navigation";
+  import { goto, invalidateAll } from "$app/navigation";
 
   let { isOpen = $bindable(false) } = $props();
 
@@ -87,7 +87,9 @@
         if (data.action === 'confirm_roadmap') {
           pendingRoadmapAction = data.payload;
         } else if (data.action === 'redirect') {
-          setTimeout(() => goto(data.url), 1500); // Small delay to let user see the "Success" message
+          // Auto-refresh all pages before redirecting
+          await invalidateAll();
+          setTimeout(() => goto(data.url), 1500);
         }
 
         const fullText = data.text;

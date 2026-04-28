@@ -47,12 +47,21 @@ export const load: PageServerLoad = async ({ params, platform }) => {
     title: flatMaterials[currentIndex]?.title || 'Untitled Material' 
   };
 
+  // Check if this is the last material in the module
+  const { results: moduleMaterials } = await platform!.env.DB.prepare(
+    'SELECT id, material_order FROM materials WHERE module_id = ? ORDER BY material_order'
+  ).bind(material.module_id).all();
+  const lastMatOrder = Math.max(...(moduleMaterials as any[]).map((m: any) => m.material_order));
+  const isLastInModule = (material.material_order as number) === lastMatOrder;
+
   return {
     material: currentMaterialWithTitle as any,
     moduleName: module.module_name as string,
+    moduleId: material.module_id as string,
     allMaterials: flatMaterials,
     currentIndex,
-    totalMaterials: flatMaterials.length
+    totalMaterials: flatMaterials.length,
+    isLastInModule
   };
 };
 
@@ -79,6 +88,17 @@ export const actions: Actions = {
     const nextMaterial = (allMaterials as any[])[currentIndex + 1];
 
     if (nextMaterial) {
+      // Guard: if next material is in a different module, check quiz pass
+      if (nextMaterial.module_id !== currentMaterial.module_id) {
+        const quizResult = await platform!.env.DB.prepare(
+          'SELECT passed FROM quiz_results WHERE user_id = ? AND module_id = ?'
+        ).bind(userId, currentMaterial.module_id).first();
+
+        if (!quizResult || !(quizResult as any).passed) {
+          throw redirect(303, `/roadmap/${currentMaterial.module_id}/quiz`);
+        }
+      }
+
       // 2. Unlock the next material's module and set current_material_id
       // We use INSERT OR REPLACE or check if exists.
       // Actually, we should just UPDATE the relevant user_module_progress row.
