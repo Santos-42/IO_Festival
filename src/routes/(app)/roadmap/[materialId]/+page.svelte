@@ -5,7 +5,7 @@
 
   let { data } = $props();
 
-  let checkpointPassed = $state(false);
+  let checkpointPassed = $state(data.checkpointAlreadyPassed);
 
   // Parse YouTube video ID from URL
   function getYouTubeId(url: string) {
@@ -103,13 +103,13 @@
 
   <!-- Navigation -->
   <div class="space-y-6 pt-4">
-    <!-- Checkpoint Gate (shown before Next button when not yet passed) -->
-    {#if nextMaterial && !checkpointPassed}
+    <!-- Checkpoint Gate (shown when not yet passed, including last material) -->
+    {#if !checkpointPassed}
       <CheckpointGate materialId={data.material.id} onPass={() => checkpointPassed = true} />
     {/if}
 
-    <!-- Quiz Button (shown after last material) -->
-    {#if isLastInModule && !nextMaterial}
+    <!-- Quiz Button (shown after last material, only when checkpoint passed) -->
+    {#if isLastInModule && !nextMaterial && checkpointPassed}
       <div class="bg-white rounded-[2.5rem] p-6 border-2 border-blue-100 shadow-lg shadow-blue-50/50" in:fade>
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-4">

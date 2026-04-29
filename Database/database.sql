@@ -122,6 +122,7 @@ CREATE TABLE checkpoint_attempts (
     module_id TEXT NOT NULL,
     question TEXT NOT NULL,
     answer_key TEXT NOT NULL,            
+    user_answer TEXT,
     status TEXT NOT NULL DEFAULT 'active', 
     hint TEXT,                            
     failed_at DATETIME,                   
@@ -129,4 +130,16 @@ CREATE TABLE checkpoint_attempts (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE CASCADE,
     FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+);
+
+-- 12. Tabel Pre-generated Evaluation
+CREATE TABLE evaluation_pregenerated (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    roadmap_id TEXT NOT NULL,
+    case_study TEXT NOT NULL,
+    question TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'ready',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

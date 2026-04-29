@@ -33,6 +33,7 @@
       if (data.alreadyPassed) {
         passed = true;
         loading = false;
+        onPass();
         return;
       }
 
@@ -145,14 +146,19 @@
       </button>
     </div>
   {:else if passed}
-    <div class="flex items-center space-x-3 p-4 bg-green-50 rounded-2xl border border-green-100">
-      <CheckCircle size={20} class="text-green-500" />
-      <div>
-        <span class="text-green-600 font-bold">Checkpoint Lulus!</span>
-        {#if resultMessage}
-          <p class="text-green-500 text-sm mt-1">{resultMessage}</p>
-        {/if}
+    <div class="flex items-center justify-between p-4 bg-green-50 rounded-2xl border border-green-100">
+      <div class="flex items-center space-x-3">
+        <CheckCircle size={20} class="text-green-500" />
+        <div>
+          <span class="text-green-600 font-bold">Checkpoint Lulus!</span>
+          {#if resultMessage}
+            <p class="text-green-500 text-sm mt-1">{resultMessage}</p>
+          {/if}
+        </div>
       </div>
+      <a href="/roadmap/checkpoint-review/{materialId}" class="text-green-600 text-xs font-bold hover:underline shrink-0">
+        Lihat Riwayat
+      </a>
     </div>
   {:else if cooldown > 0}
     <div class="space-y-4">

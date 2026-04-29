@@ -34,7 +34,33 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
     }
   }
 
-  // 2. Check for active (unexpired) attempt - reuse if exists
+  // 2. Check for ready (pre-generated) attempt
+  const readyAttempt = await db.prepare(
+    `SELECT id, questions_data, attempt_number FROM quiz_attempts 
+     WHERE user_id = ? AND module_id = ? AND status = 'ready'
+     ORDER BY created_at DESC LIMIT 1`
+  ).bind(userId, moduleId).first();
+
+  if (readyAttempt) {
+    const expiresAt = new Date(Date.now() + QUIZ_DURATION_MINUTES * 60 * 1000).toISOString();
+    await db.prepare(
+      `UPDATE quiz_attempts SET status = 'active', expires_at = ? WHERE id = ?`
+    ).bind(expiresAt, (readyAttempt as any).id).run();
+
+    const questions = JSON.parse((readyAttempt as any).questions_data);
+    const safeQuestions = questions.map((q: any) => ({
+      question: q.question,
+      options: q.options
+    }));
+    return json({
+      attemptId: (readyAttempt as any).id,
+      questions: safeQuestions,
+      expiresAt,
+      attemptNumber: (readyAttempt as any).attempt_number
+    });
+  }
+
+  // 3. Check for active (unexpired) attempt - reuse if exists
   const activeAttempt = await db.prepare(
     `SELECT id, questions_data, expires_at FROM quiz_attempts 
      WHERE user_id = ? AND module_id = ? AND status = 'active' AND expires_at > datetime('now')

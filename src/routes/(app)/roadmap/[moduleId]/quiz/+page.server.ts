@@ -37,6 +37,16 @@ export const load: PageServerLoad = async ({ params, locals, platform }) => {
   const allMaterials = materials as any[];
   const lastMaterial = allMaterials[allMaterials.length - 1];
 
+  // 5. Guard: all checkpoints must be passed
+  const { results: passedCheckpoints } = await db.prepare(
+    `SELECT DISTINCT material_id FROM checkpoint_attempts 
+     WHERE user_id = ? AND module_id = ? AND status = 'passed'`
+  ).bind(userId, moduleId).all();
+
+  if ((passedCheckpoints as any[]).length < allMaterials.length) {
+    throw redirect(303, '/roadmap');
+  }
+
   return {
     moduleId,
     moduleName: (module as any).module_name,

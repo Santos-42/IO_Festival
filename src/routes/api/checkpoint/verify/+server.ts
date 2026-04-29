@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
+import { preGenerateCheckpoint } from '$lib/server/pregenerate';
 
 export const POST: RequestHandler = async ({ request, platform, locals }) => {
   const userId = locals.user?.id;
@@ -26,6 +27,11 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
   if (cp.status === 'passed') {
     return json({ passed: true, alreadyPassed: true });
   }
+
+  // 1b. Save user answer before grading
+  await db.prepare(
+    'UPDATE checkpoint_attempts SET user_answer = ? WHERE id = ?'
+  ).bind(answer, checkpointId).run();
 
   // 2. Semantic grading via AI
   const prompt = `Anda adalah evaluator pembelajaran (grader).
@@ -101,6 +107,11 @@ Format output HARUS JSON valid:
        SET status = 'failed', hint = ?, failed_at = ?
        WHERE id = ?`
     ).bind(gradingResult.reason, now, checkpointId).run();
+
+    // Pre-generate new checkpoint for this material
+    platform!.context.waitUntil(
+      preGenerateCheckpoint(db, apiKey, userId, cp.material_id, cp.module_id)
+    );
 
     return json({
       passed: false,

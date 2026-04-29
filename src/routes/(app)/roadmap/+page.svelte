@@ -185,7 +185,7 @@
                   {/if}
 
                   <!-- Quiz CTA -->
-                  {#if module.allMaterialsUnlocked && module.is_unlocked && !module.quizPassed}
+                  {#if module.allCheckpointsPassed && module.is_unlocked && !module.quizPassed}
                     <a
                       href="/roadmap/{module.id}/quiz"
                       class="flex items-center justify-center space-x-3 p-4 mt-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all shadow-lg shadow-blue-200 group"
@@ -194,6 +194,12 @@
                       <span>Quiz Akhir Modul</span>
                       <ArrowRight size={16} class="group-hover:translate-x-1 transition-transform" />
                     </a>
+                  {/if}
+
+                  {#if module.allMaterialsUnlocked && !module.allCheckpointsPassed && module.is_unlocked && !module.quizPassed}
+                    <div class="p-4 mt-3 bg-amber-50 rounded-2xl border border-amber-200 text-amber-700 text-sm font-bold">
+                      Selesaikan semua Micro-Checkpoint untuk membuka Quiz Akhir Modul
+                    </div>
                   {/if}
                 </div>
               {/if}

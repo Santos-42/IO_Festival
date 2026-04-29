@@ -40,7 +40,26 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
     }
   }
 
-  // 3. Check for existing active checkpoint (reuse if exists)
+  // 3. Check for ready (pre-generated) checkpoint
+  const readyCheckpoint = await db.prepare(
+    `SELECT id, question, hint FROM checkpoint_attempts 
+     WHERE user_id = ? AND material_id = ? AND status = 'ready'
+     ORDER BY created_at DESC LIMIT 1`
+  ).bind(userId, materialId).first();
+
+  if (readyCheckpoint) {
+    await db.prepare(
+      `UPDATE checkpoint_attempts SET status = 'active' WHERE id = ?`
+    ).bind((readyCheckpoint as any).id).run();
+
+    return json({
+      checkpointId: (readyCheckpoint as any).id,
+      question: (readyCheckpoint as any).question,
+      hint: (readyCheckpoint as any).hint
+    });
+  }
+
+  // 4. Check for existing active checkpoint (reuse if exists)
   const activeCheckpoint = await db.prepare(
     `SELECT id, question, hint, status FROM checkpoint_attempts 
      WHERE user_id = ? AND material_id = ? AND status = 'active'

@@ -1,7 +1,7 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 
-export const load: PageServerLoad = async ({ params, platform }) => {
+export const load: PageServerLoad = async ({ params, platform, locals }) => {
   const { materialId } = params;
 
   // 1. Fetch the specific material
@@ -54,6 +54,17 @@ export const load: PageServerLoad = async ({ params, platform }) => {
   const lastMatOrder = Math.max(...(moduleMaterials as any[]).map((m: any) => m.material_order));
   const isLastInModule = (material.material_order as number) === lastMatOrder;
 
+  // Check if this material's checkpoint is already passed
+  const userId = locals.user?.id;
+  let checkpointAlreadyPassed = false;
+  if (userId) {
+    const passedCheckpoint = await platform!.env.DB.prepare(
+      `SELECT id FROM checkpoint_attempts 
+       WHERE user_id = ? AND material_id = ? AND status = 'passed' LIMIT 1`
+    ).bind(userId, materialId).first();
+    checkpointAlreadyPassed = !!passedCheckpoint;
+  }
+
   return {
     material: currentMaterialWithTitle as any,
     moduleName: module.module_name as string,
@@ -61,7 +72,8 @@ export const load: PageServerLoad = async ({ params, platform }) => {
     allMaterials: flatMaterials,
     currentIndex,
     totalMaterials: flatMaterials.length,
-    isLastInModule
+    isLastInModule,
+    checkpointAlreadyPassed
   };
 };
 

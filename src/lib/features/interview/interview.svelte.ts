@@ -8,8 +8,8 @@ const CONFIG = {
   IN_RATE: 16000,
   OUT_RATE: 24000,
   BUFFER: 2048,
-  SILENCE_MS: 15000,
-  RMS_THRESHOLD: 500
+  SILENCE_MS: 30000,
+  RMS_THRESHOLD: 200
 };
 
 export type Role = { id: string; role_name: string };
@@ -176,7 +176,8 @@ export class InterviewManager {
     if (this.connectionState !== 'ready' || this.isSpeaking) return;
 
     this.silenceTimer = setTimeout(() => {
-      this.sendSystem('[SISTEM: Kandidat terdiam selama 20 detik. Berikan dorongan atau tanyakan apakah mereka butuh klarifikasi.]');
+      this.appendTranscript('Apakah kamu masih di sana? Lanjutkan percakapan atau tanyakan jika ada yang kurang jelas.', 'ai');
+      this.sendSystem('[SISTEM: Kandidat terdiam selama 30 detik. Berikan dorongan atau tanyakan apakah mereka butuh klarifikasi.]');
     }, CONFIG.SILENCE_MS);
   }
 
@@ -208,19 +209,26 @@ export class InterviewManager {
 
       this.ws.onopen = () => this.onOpen();
       this.ws.onmessage = (e) => this.onMessage(e);
-      this.ws.onerror = () => {
+      this.ws.onerror = (event) => {
+        console.error('WebSocket error:', event);
         this.connectionState = 'error';
-        this.statusText = 'Koneksi WebSocket terputus atau gagal.';
+        this.statusText = 'Koneksi WebSocket gagal. Periksa jaringan dan coba lagi.';
       };
 
       this.ws.onclose = (event) => {
-        this.connectionState = 'idle';
-        this.statusText = `Ditutup (code: ${event.code})`;
+        if (this.connectionState === 'connecting') {
+          this.connectionState = 'error';
+          this.statusText = 'Gagal terhubung ke server wawancara. Coba lagi.';
+        } else {
+          this.connectionState = 'idle';
+          this.statusText = `Ditutup (code: ${event.code})`;
+        }
         this.stopMic();
       };
     } catch (err) {
       console.error('Koneksi WebSocket Gagal:', err);
       this.connectionState = 'error';
+      this.statusText = 'Gagal membuat koneksi WebSocket.';
     }
   }
 
@@ -348,7 +356,19 @@ export class InterviewManager {
           noiseSuppression: true
         }
       });
+    } catch (err: any) {
+      console.error('Gagal memulai perekaman mikrofon:', err);
+      if (err.name === 'NotAllowedError') {
+        this.statusText = 'Izin mikrofon ditolak. Izinkan akses mikrofon di pengaturan browser.';
+      } else if (err.name === 'NotFoundError') {
+        this.statusText = 'Mikrofon tidak ditemukan. Pastikan perangkat memiliki mikrofon.';
+      } else {
+        this.statusText = 'Gagal mengakses mikrofon: ' + (err.message || 'Unknown error');
+      }
+      return;
+    }
 
+    try {
       this.recCtx = new AudioContext({ sampleRate: CONFIG.IN_RATE });
       this.source = this.recCtx.createMediaStreamSource(this.mediaStream);
 
@@ -372,6 +392,7 @@ export class InterviewManager {
           }
         }));
 
+        // Reset silence timer when user speaks (above threshold)
         if (level > CONFIG.RMS_THRESHOLD) {
           this.nudgeIfSilent();
         }
@@ -381,9 +402,12 @@ export class InterviewManager {
       this.isRecording = true;
       this.statusText = 'Merekam... Silakan berbicara';
 
-    } catch (err) {
-      console.error('Gagal memulai perekaman mikrofon:', err);
-      this.statusText = 'Gagal mengakses mikrofon.';
+    } catch (err: any) {
+      console.error('Gagal menginisialisasi audio:', err);
+      this.statusText = 'Gagal menginisialisasi sistem audio. Refresh halaman dan coba lagi.';
+      // Clean up stream if audio context failed
+      this.mediaStream?.getTracks().forEach(t => t.stop());
+      this.mediaStream = null;
     }
   }
 

@@ -13,6 +13,27 @@
   let userAnswer = $state("");
   let evaluationResult = $state<any>(null);
   let errorMsg = $state("");
+  let evaluationCooldown = $state(0);
+
+  let cooldownInterval: ReturnType<typeof setInterval>;
+
+  function startCooldown(seconds: number) {
+    evaluationCooldown = seconds;
+    if (cooldownInterval) clearInterval(cooldownInterval);
+    cooldownInterval = setInterval(() => {
+      evaluationCooldown--;
+      if (evaluationCooldown <= 0) {
+        clearInterval(cooldownInterval);
+        evaluationCooldown = 0;
+      }
+    }, 1000);
+  }
+
+  function formatTime(seconds: number) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
 
   async function startEvaluation() {
     if (!data.activeRole) return;
@@ -30,6 +51,14 @@
         })
       });
       
+      if (res.status === 429) {
+        const errData = await res.json();
+        errorMsg = "Evaluasi sedang cooldown";
+        startCooldown(errData.cooldown_remaining || 300);
+        currentState = "idle";
+        return;
+      }
+
       if (!res.ok) throw new Error("Gagal mengambil soal dari AI");
       
       currentCase = await res.json();
@@ -76,6 +105,8 @@
     userAnswer = "";
     currentCase = { caseStudy: "", question: "" };
     evaluationResult = null;
+    evaluationCooldown = 0;
+    if (cooldownInterval) clearInterval(cooldownInterval);
   }
 </script>
 
@@ -109,13 +140,20 @@
             </div>
 
             {#if data.activeRole}
-              <button 
-                onclick={startEvaluation}
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-[1.5rem] font-black text-sm transition-all shadow-xl shadow-blue-100 flex items-center justify-center space-x-3 group"
-              >
-                <Sparkles size={20} />
-                <span>Mulai Evaluasi Sekarang</span>
-              </button>
+              {#if evaluationCooldown > 0}
+                <div class="w-full bg-amber-50 border border-amber-200 rounded-[1.5rem] p-4 text-center">
+                  <p class="text-amber-700 font-bold">Cooldown: {formatTime(evaluationCooldown)}</p>
+                  <p class="text-amber-600 text-sm mt-1">Silakan pelajari ulang materi sebelum mencoba lagi</p>
+                </div>
+              {:else}
+                <button 
+                  onclick={startEvaluation}
+                  class="w-full bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-[1.5rem] font-black text-sm transition-all shadow-xl shadow-blue-100 flex items-center justify-center space-x-3 group"
+                >
+                  <Sparkles size={20} />
+                  <span>Mulai Evaluasi Sekarang</span>
+                </button>
+              {/if}
             {:else}
               <div class="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center space-x-3 text-red-600">
                 <AlertCircle size={20} />
@@ -139,7 +177,7 @@
           {:else}
             <div class="grid grid-cols-1 gap-4">
               {#each data.pastEvaluations as eval_item}
-                <div class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex items-center justify-between group hover:border-blue-200 transition-all">
+                <a href="/evaluation/review/{eval_item.id}" class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex items-center justify-between group hover:border-blue-200 transition-all">
                   <div class="flex items-center space-x-4">
                     <div class="w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg
                       {eval_item.score >= 70 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}">
@@ -152,7 +190,8 @@
                       </p>
                     </div>
                   </div>
-                </div>
+                  <span class="text-blue-600 text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">Lihat Detail →</span>
+                </a>
               {/each}
             </div>
           {/if}
@@ -208,7 +247,7 @@
             <ClipboardList size={14} />
             <span>Mini Case Study</span>
           </div>
-          <h3 class="text-base font-black leading-tight">{currentCase.caseStudy}</h3>
+          <h3 class="text-base font-black leading-relaxed whitespace-pre-wrap">{currentCase.caseStudy}</h3>
         </div>
       </div>
 
@@ -216,7 +255,7 @@
       <div class="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-xl shadow-blue-50/50 space-y-6">
         <div>
           <label for="answer" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Pertanyaan</label>
-          <p class="text-sm font-bold text-gray-800">{currentCase.question}</p>
+          <p class="text-sm font-bold text-gray-800 leading-relaxed whitespace-pre-wrap">{currentCase.question}</p>
         </div>
 
         <div class="space-y-2">

@@ -1,6 +1,9 @@
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
+import { preGenerateEvaluation } from '$lib/server/pregenerate';
+
+const EVALUATION_COOLDOWN_MINUTES = 5;
 
 export const POST: RequestHandler = async ({ request, platform, locals }) => {
   const userId = locals.user?.id;
@@ -11,8 +14,53 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
   const apiKey = env.Deepseek_Evaluator;
   if (!apiKey) return json({ error: 'DeepSeek API key not configured' }, { status: 500 });
 
+  const db = platform!.env.DB;
+
   try {
     if (action === 'generate') {
+      // Get user roadmap
+      const userRoadmap = await db.prepare(
+        "SELECT id, roadmap_id FROM user_roadmaps WHERE user_id = ? AND status = 'active' LIMIT 1"
+      ).bind(userId).first();
+
+      if (!userRoadmap) throw new Error("Roadmap aktif tidak ditemukan");
+
+      // Check cooldown: last FAIL evaluation
+      const recentFailed = await db.prepare(
+        `SELECT created_at FROM evaluations
+         JOIN user_roadmaps ur ON evaluations.user_roadmap_id = ur.id
+         WHERE ur.user_id = ? AND evaluations.ai_decision = 'FAIL'
+         ORDER BY evaluations.created_at DESC LIMIT 1`
+      ).bind(userId).first();
+
+      if (recentFailed) {
+        const cooldownEnd = new Date((recentFailed as any).created_at);
+        cooldownEnd.setMinutes(cooldownEnd.getMinutes() + EVALUATION_COOLDOWN_MINUTES);
+        if (new Date() < cooldownEnd) {
+          const remaining = Math.ceil((cooldownEnd.getTime() - Date.now()) / 1000);
+          return json({ error: 'Cooldown aktif', cooldown_remaining: remaining }, { status: 429 });
+        }
+      }
+
+      // Check for pre-generated evaluation
+      const preGen = await db.prepare(
+        `SELECT id, case_study, question FROM evaluation_pregenerated 
+         WHERE user_id = ? AND status = 'ready'
+         ORDER BY created_at DESC LIMIT 1`
+      ).bind(userId).first();
+
+      if (preGen) {
+        await db.prepare(
+          `UPDATE evaluation_pregenerated SET status = 'used' WHERE id = ?`
+        ).bind((preGen as any).id).run();
+
+        return json({
+          caseStudy: (preGen as any).case_study,
+          question: (preGen as any).question
+        });
+      }
+
+      // Fallback: generate on-demand
       const prompt = `Anda adalah evaluator profesional untuk posisi ${roleName}.
 Kandidat telah mempelajari modul-modul berikut: ${completedModules || 'Fondasi dasar'}.
 Buatlah 1 skenario mini case / use case realistis yang relevan dengan posisi tersebut.
@@ -27,14 +75,29 @@ Format output HARUS berupa JSON valid dengan struktur: { "caseStudy": "...", "qu
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'deepseek-chat',
+          model: 'deepseek-v4-flash',
           messages: [{ role: 'user', content: prompt }],
           response_format: { type: 'json_object' }
         })
       });
 
       const data = await response.json();
-      return json(JSON.parse(data.choices[0].message.content));
+      if (!data.choices?.[0]?.message?.content) {
+        console.error('DeepSeek generate response missing content:', JSON.stringify(data));
+        return json({ error: 'Gagal generate evaluasi: respons AI tidak valid' }, { status: 502 });
+      }
+
+      try {
+        const parsed = JSON.parse(data.choices[0].message.content);
+        if (!parsed.caseStudy || !parsed.question) {
+          console.error('DeepSeek generate response invalid structure:', data.choices[0].message.content);
+          return json({ error: 'Gagal generate evaluasi: format respons tidak sesuai' }, { status: 502 });
+        }
+        return json(parsed);
+      } catch (parseErr) {
+        console.error('DeepSeek generate JSON parse error:', data.choices[0].message.content, parseErr);
+        return json({ error: 'Gagal generate evaluasi: gagal parsing respons AI' }, { status: 502 });
+      }
 
     } else if (action === 'evaluate') {
       const prompt = `Anda adalah evaluator profesional untuk posisi ${roleName}.
@@ -60,18 +123,33 @@ Format output HARUS berupa JSON valid dengan struktur:
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'deepseek-chat',
+          model: 'deepseek-v4-flash',
           messages: [{ role: 'user', content: prompt }],
           response_format: { type: 'json_object' }
         })
       });
 
       const data = await response.json();
-      const evaluation = JSON.parse(data.choices[0].message.content);
+      if (!data.choices?.[0]?.message?.content) {
+        console.error('DeepSeek evaluate response missing content:', JSON.stringify(data));
+        return json({ error: 'Gagal evaluasi: respons AI tidak valid' }, { status: 502 });
+      }
+
+      let evaluation: any;
+      try {
+        evaluation = JSON.parse(data.choices[0].message.content);
+        if (typeof evaluation.score !== 'number' || !evaluation.decision) {
+          console.error('DeepSeek evaluate response invalid structure:', data.choices[0].message.content);
+          return json({ error: 'Gagal evaluasi: format respons tidak sesuai' }, { status: 502 });
+        }
+      } catch (parseErr) {
+        console.error('DeepSeek evaluate JSON parse error:', data.choices[0].message.content, parseErr);
+        return json({ error: 'Gagal evaluasi: gagal parsing respons AI' }, { status: 502 });
+      }
 
       // 1. Get user_roadmap_id
-      const userRoadmap = await platform!.env.DB.prepare(
-        "SELECT id FROM user_roadmaps WHERE user_id = ? AND status = 'active' LIMIT 1"
+      const userRoadmap = await db.prepare(
+        "SELECT id, roadmap_id FROM user_roadmaps WHERE user_id = ? AND status = 'active' LIMIT 1"
       )
         .bind(userId)
         .first();
@@ -79,7 +157,7 @@ Format output HARUS berupa JSON valid dengan struktur:
       if (!userRoadmap) throw new Error("Roadmap aktif tidak ditemukan");
 
       // 2. Get first module_id for this roadmap to associate the evaluation
-      const firstModule = await platform!.env.DB.prepare(
+      const firstModule = await db.prepare(
         "SELECT id FROM modules WHERE roadmap_id = ? ORDER BY module_order LIMIT 1"
       )
         .bind(roleId)
@@ -88,7 +166,7 @@ Format output HARUS berupa JSON valid dengan struktur:
       if (!firstModule) throw new Error("Modul tidak ditemukan");
 
       // 3. Save to D1
-      await platform!.env.DB.prepare(
+      await db.prepare(
         `INSERT INTO evaluations (id, user_roadmap_id, module_id, user_answer, ai_score, ai_decision, ai_feedback, transcript_data, created_at) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
@@ -112,12 +190,30 @@ Format output HARUS berupa JSON valid dengan struktur:
         )
         .run();
 
-      return json(evaluation);
+      // 4. Pre-generate new case study if failed
+      if (evaluation.decision !== 'PASS') {
+        const completedMods = completedModules || 'Fondasi dasar';
+        platform!.context.waitUntil(
+          preGenerateEvaluation(db, apiKey, userId, (userRoadmap as any).roadmap_id, roleName, completedMods)
+        );
+      }
+
+      return json({
+        ...evaluation,
+        cooldownRemaining: evaluation.decision !== 'PASS' ? EVALUATION_COOLDOWN_MINUTES * 60 : 0
+      });
     }
 
     return json({ error: 'Invalid action' }, { status: 400 });
   } catch (err: any) {
-    console.error('DeepSeek API Error:', err);
-    return json({ error: 'Failed to process evaluation', details: err.message }, { status: 500 });
+    console.error('Evaluation API Error:', err.message, err.stack, {
+      action,
+      roleName,
+      userId,
+      hasCaseStudy: !!caseStudy,
+      hasQuestion: !!question,
+      answerLength: answer?.length
+    });
+    return json({ error: 'Gagal memproses evaluasi', details: err.message }, { status: 500 });
   }
 };

@@ -1,5 +1,7 @@
 import { json } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
+import { preGenerateQuiz } from '$lib/server/pregenerate';
 
 const PASSING_SCORE = 70;
 
@@ -11,10 +13,11 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
   if (!attemptId || !answers) return json({ error: 'attemptId dan answers diperlukan' }, { status: 400 });
 
   const db = platform!.env.DB;
+  const apiKey = env.Deepseek_Evaluator;
 
   // 1. Verify attempt belongs to user and is still active
   const attempt = await db.prepare(
-    `SELECT id, questions_data, answers_data, status, module_id FROM quiz_attempts 
+    `SELECT id, questions_data, answers_data, status, module_id, attempt_number FROM quiz_attempts 
      WHERE id = ? AND user_id = ?`
   ).bind(attemptId, userId).first();
 
@@ -131,6 +134,14 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
         }
       }
     }
+  }
+
+  // 7. Pre-generate next attempt if failed
+  if (!passed && apiKey) {
+    const nextAttemptNumber = (attemptData.attempt_number || 0) + 1;
+    platform!.context.waitUntil(
+      preGenerateQuiz(db, apiKey, userId, attemptData.module_id, nextAttemptNumber)
+    );
   }
 
   return json({

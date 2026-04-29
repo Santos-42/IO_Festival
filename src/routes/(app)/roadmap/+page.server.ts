@@ -50,6 +50,20 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
     .bind(userId)
     .all();
 
+  // 5b. Fetch all passed checkpoints
+  const { results: allCheckpoints } = await platform!.env.DB.prepare(
+    `SELECT DISTINCT material_id, module_id FROM checkpoint_attempts 
+     WHERE user_id = ? AND status = 'passed'`
+  ).bind(userId).all();
+
+  const checkpointPassedMap = new Map<string, Set<string>>();
+  (allCheckpoints as any[]).forEach(cp => {
+    if (!checkpointPassedMap.has(cp.module_id)) {
+      checkpointPassedMap.set(cp.module_id, new Set());
+    }
+    checkpointPassedMap.get(cp.module_id)!.add(cp.material_id);
+  });
+
   // Enriched data: Nest materials into modules and extract titles
   // Build lookup for quiz results of PREVIOUS module
   const quizPassedMap = new Map<string, boolean>();
@@ -99,6 +113,11 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
     const allUnlocked = moduleMaterials.every(m => !m.is_locked);
     const quizResult = (quizResults as any[])?.find(qr => qr.module_id === mod.id);
 
+    // Checkpoint status: all materials must have a passed checkpoint
+    const passedCheckpointCount = checkpointPassedMap.get(mod.id)?.size || 0;
+    const totalMaterialsInModule = moduleMaterials.length;
+    const allCheckpointsPassed = passedCheckpointCount >= totalMaterialsInModule;
+
     return {
       ...mod,
       materials: moduleMaterials,
@@ -106,7 +125,8 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
       allMaterialsUnlocked: allUnlocked,
       quizPassed: quizResult?.passed || false,
       quizScore: quizResult?.score || null,
-      lockReason
+      lockReason,
+      allCheckpointsPassed
     };
   });
 
