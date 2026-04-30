@@ -7,6 +7,8 @@
 
   let isMaterialPage = $derived(
     /^\/roadmap\/(?!checkpoint-review(?:\/|$))[^\/]+$/.test($page.url.pathname) ||
+    /\/evaluation\/review\//.test($page.url.pathname) ||
+    /\/evaluation\/active/.test($page.url.pathname) ||
     /\/quiz/.test($page.url.pathname) ||
     /\/checkpoint-review\//.test($page.url.pathname)
   );

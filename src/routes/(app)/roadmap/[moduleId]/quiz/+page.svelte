@@ -5,6 +5,7 @@
 <script lang="ts">
   import { ArrowLeft, Clock, CheckCircle, XCircle, AlertTriangle, Loader2 } from "lucide-svelte";
   import { fade, fly } from "svelte/transition";
+  import ExamProtection from "$lib/components/ExamProtection.svelte";
 
   let { data } = $props();
 
@@ -161,7 +162,7 @@
       if (timerInterval) clearInterval(timerInterval);
 
       if (!data.passed) {
-        cooldown = 300; // 5 minutes
+        cooldown = result.cooldown_seconds || 60;
         startCooldown();
       }
 
@@ -231,11 +232,11 @@
           </div>
           <div class="flex flex-col items-center space-y-3">
             <div class="flex items-center gap-4">
-              <a href="/roadmap" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-200">
+              <a href="/roadmap" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all">
                 Kembali ke Roadmap
               </a>
               {#if data.nextModuleFirstMaterialId}
-                <a href="/roadmap/{data.nextModuleFirstMaterialId}" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-green-700 transition-all shadow-xl shadow-green-200">
+                <a href="/roadmap/{data.nextModuleFirstMaterialId}" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-green-700 transition-all">
                   Lanjut ke Materi Selanjutnya
                 </a>
               {/if}
@@ -260,11 +261,11 @@
           </div>
           <div class="flex flex-col items-center space-y-3">
             <div class="flex items-center gap-4">
-              <a href="/roadmap" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-200">
+              <a href="/roadmap" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all">
                 Kembali ke Roadmap
               </a>
               {#if data.nextModuleFirstMaterialId}
-                <a href="/roadmap/{data.nextModuleFirstMaterialId}" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-green-700 transition-all shadow-xl shadow-green-200">
+                <a href="/roadmap/{data.nextModuleFirstMaterialId}" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-green-700 transition-all">
                   Lanjut ke Materi Selanjutnya
                 </a>
               {/if}
@@ -294,7 +295,7 @@
           </div>
           {#if cooldown <= 0}
             <div class="flex items-center gap-4">
-              <button onclick={initQuiz} class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-200">
+              <button onclick={initQuiz} class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all">
                 Coba Lagi
               </button>
               {#if data.lastMaterialId}
@@ -305,12 +306,12 @@
             </div>
           {:else}
             <div class="flex items-center gap-4">
-              <a href="/roadmap" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-200">
+              <a href="/roadmap" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all">
                 Kembali ke Roadmap
               </a>
-              {#if data.lastMaterialId}
-                <a href="/roadmap/{data.lastMaterialId}" class="bg-white border-2 border-gray-200 text-gray-700 px-8 py-4 rounded-2xl font-bold hover:border-blue-500 hover:text-blue-600 transition-all">
-                  Kembali ke Materi
+              {#if data.nextModuleFirstMaterialId}
+                <a href="/roadmap/{data.nextModuleFirstMaterialId}" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-green-700 transition-all">
+                  Lanjut ke Materi Selanjutnya
                 </a>
               {/if}
             </div>
@@ -333,7 +334,7 @@
       </div>
       <div class="flex flex-col items-center space-y-3">
         <div class="flex items-center gap-4">
-          <a href="/roadmap" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-200">
+          <a href="/roadmap" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all">
             Kembali ke Roadmap
           </a>
           {#if data.lastMaterialId}
@@ -351,6 +352,7 @@
     </div>
   {:else}
     <!-- Quiz View -->
+    <ExamProtection>
     <div class="space-y-6" in:fade>
       <!-- Progress Bar (sticky with timer) -->
       <div class="bg-white/90 backdrop-blur-md rounded-[2.5rem] p-6 border border-gray-100 shadow-md sticky top-[10px] z-50">
@@ -428,5 +430,6 @@
         </button>
       </div>
     </div>
+    </ExamProtection>
   {/if}
 </div>

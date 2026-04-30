@@ -1,9 +1,11 @@
 import type { PageServerLoad } from './$types';
+import { generateJobRecommendations } from '$lib/server/job-recommendations';
+import type { JobRecommendation } from '$lib/server/job-recommendations';
 
 export const load: PageServerLoad = async ({ locals, platform }) => {
   const userId = locals.user?.id;
 
-  if (!userId) return { roadmapProgress: [], evaluations: [] };
+  if (!userId) return { roadmapProgress: [], evaluations: [], quizScores: [], averageScore: null, level: null, jobRecommendations: [] };
 
   // 1. Fetch Roadmap Progress (accurate: checkpoint + quiz)
   const { results: roadmapProgress } = await platform!.env.DB.prepare(`
@@ -63,10 +65,42 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
     .bind(userId)
     .all();
 
+  // 4. Calculate average evaluation score and determine level
+  const evalList = evaluations as { ai_score: number }[];
+  const scores = evalList.map(e => e.ai_score).filter(s => typeof s === 'number' && !isNaN(s));
+  let averageScore: number | null = null;
+  let level: string | null = null;
+  let jobRecommendations: JobRecommendation[] = [];
+
+  if (scores.length > 0) {
+    averageScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+
+    if (averageScore >= 86) {
+      level = 'Professional';
+    } else if (averageScore >= 61) {
+      level = 'Intermediate';
+    } else {
+      level = 'Beginner';
+    }
+
+    // Get active role name for role-specific recommendations
+    const activeRoadmap = (roadmapProgress as any[])?.find((r: any) => r.status === 'active');
+    const roleName = activeRoadmap?.role_name || 'Teknologi';
+
+    try {
+      jobRecommendations = await generateJobRecommendations(roleName, level);
+    } catch (e) {
+      console.error('Failed to generate job recommendations:', e);
+    }
+  }
+
   return {
     roadmapProgress: roadmapProgress as any[],
     evaluations: evaluations as any[],
     quizScores: quizScores as any[],
-    user: locals.user
+    user: locals.user,
+    averageScore,
+    level,
+    jobRecommendations
   };
 };

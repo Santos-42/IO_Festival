@@ -21,6 +21,17 @@
     checkpointPassed = data.checkpointAlreadyPassed;
   });
 
+  // Pre-generate quiz when user reaches the last material
+  $effect(() => {
+    if (data.isLastInModule && data.moduleId) {
+      fetch('/api/quiz/pre-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ moduleId: data.moduleId })
+      }).catch(() => {});
+    }
+  });
+
   // Parse YouTube video ID from URL
   function getYouTubeId(url: string) {
     if (!url) return null;

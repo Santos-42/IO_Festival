@@ -2,10 +2,10 @@ import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
 
-const COOLDOWN_MINUTES = 5;
 const QUIZ_DURATION_MINUTES = 15;
 const PASSING_SCORE = 70;
 const NUM_QUESTIONS = 10;
+const BASE_COOLDOWN_SECONDS = 60; // 1 minute per attempt number
 
 export const POST: RequestHandler = async ({ request, platform, locals }) => {
   const userId = locals.user?.id;
@@ -20,14 +20,16 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 
   // 1. Check cooldown: any failed attempt within cooldown period
   const recentFailed = await db.prepare(
-    `SELECT failed_at FROM quiz_attempts 
+    `SELECT failed_at, attempt_number FROM quiz_attempts 
      WHERE user_id = ? AND module_id = ? AND status = 'failed'
      ORDER BY failed_at DESC LIMIT 1`
   ).bind(userId, moduleId).first();
 
   if (recentFailed) {
-    const cooldownEnd = new Date((recentFailed as any).failed_at);
-    cooldownEnd.setMinutes(cooldownEnd.getMinutes() + COOLDOWN_MINUTES);
+    const failedAttempt = recentFailed as any;
+    const cooldownSeconds = (failedAttempt.attempt_number || 1) * BASE_COOLDOWN_SECONDS;
+    const cooldownEnd = new Date(failedAttempt.failed_at);
+    cooldownEnd.setSeconds(cooldownEnd.getSeconds() + cooldownSeconds);
     if (new Date() < cooldownEnd) {
       const remaining = Math.ceil((cooldownEnd.getTime() - Date.now()) / 1000);
       return json({ error: 'Cooldown aktif', cooldown_remaining: remaining }, { status: 429 });

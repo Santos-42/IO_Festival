@@ -3,7 +3,7 @@ import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
 import { preGenerateEvaluation } from '$lib/server/pregenerate';
 
-const EVALUATION_COOLDOWN_MINUTES = 5;
+const EVALUATION_COOLDOWN_MINUTES = 2;
 
 export const POST: RequestHandler = async ({ request, platform, locals }) => {
   const userId = locals.user?.id;
@@ -116,7 +116,7 @@ Pertanyaan: ${question}
 Jawaban Kandidat: ${answer}
 
 Evaluasi jawaban tersebut secara mendalam. Berikan skor angka (0-100), keputusan (PASS/FAIL), feedback umum, poin-poin kekuatan, dan area perbaikan.
-Kriteria PASS jika skor >= 70.
+Kriteria PASS jika skor >= 60.
 Format output HARUS berupa JSON valid dengan struktur:
 {
   "score": 85,

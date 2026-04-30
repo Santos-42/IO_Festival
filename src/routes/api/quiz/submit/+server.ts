@@ -151,6 +151,7 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
     correctCount,
     totalQuestions,
     answerDetails,
-    passingScore: PASSING_SCORE
+    passingScore: PASSING_SCORE,
+    cooldown_seconds: passed ? 0 : (attemptData.attempt_number || 1) * 60
   });
 };

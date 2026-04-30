@@ -5,7 +5,7 @@
 <script lang="ts">
   import AIChat from "$lib/components/AIChat.svelte";
   import { onMount } from "svelte";
-  import { Sparkles, ArrowRight, BookOpen, Compass, Play, Lock, CheckCircle2, FileText } from "lucide-svelte";
+  import { Sparkles, ArrowRight, BookOpen, Compass, Play, Lock, CheckCircle2, FileText, ChevronDown } from "lucide-svelte";
   import { fade, slide, scale } from "svelte/transition";
 
   let { data } = $props();
@@ -155,7 +155,7 @@
                   {/if}
                 </div>
                 <div class="text-gray-400 group-hover:text-blue-600 transition-transform {isExpanded ? 'rotate-180' : ''}">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+                  <ChevronDown size={20} />
                 </div>
               </button>
 

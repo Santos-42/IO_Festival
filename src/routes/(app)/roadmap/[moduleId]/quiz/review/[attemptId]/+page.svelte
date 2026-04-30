@@ -40,7 +40,7 @@
         <ArrowLeft size={18} />
         <div>
           <p class="text-[10px] uppercase tracking-widest opacity-50">Sebelumnya</p>
-          <p class="text-sm">Attempt #{data.prevAttempt.attemptNumber} {data.prevAttempt.passed ? '✅' : '❌'}</p>
+          <p class="text-sm">Attempt #{data.prevAttempt.attemptNumber} {#if data.prevAttempt.passed}<CheckCircle2 size={14} class="text-green-500 inline" />{:else}<XCircle size={14} class="text-red-500 inline" />{/if}</p>
         </div>
       </a>
     {:else}
@@ -54,7 +54,7 @@
       >
         <div class="text-right">
           <p class="text-[10px] uppercase tracking-widest opacity-50">Selanjutnya</p>
-          <p class="text-sm">Attempt #{data.nextAttempt.attemptNumber} {data.nextAttempt.passed ? '✅' : '❌'}</p>
+          <p class="text-sm">Attempt #{data.nextAttempt.attemptNumber} {#if data.nextAttempt.passed}<CheckCircle2 size={14} class="text-green-500 inline" />{:else}<XCircle size={14} class="text-red-500 inline" />{/if}</p>
         </div>
         <ArrowRight size={18} />
       </a>

@@ -93,10 +93,7 @@
         ? 'max-w-[1400px] mx-auto rounded-[20px] shadow-xl shadow-black/[0.08] border border-gray-100'
         : 'border-b border-gray-100'}"
     >
-      <a
-        href="#home"
-        class="hover:opacity-80 transition-opacity"
-      >
+      <a href="#home" class="hover:opacity-80 transition-opacity">
         <img src="/BigLogo.png" alt="Skill Leap" class="h-8 md:h-9 w-auto" />
       </a>
 
@@ -206,10 +203,15 @@
       <h1
         class="text-white text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight"
       >
-        Bangun <span class="text-blue-500">Karir Teknologi</span><br
-          class="hidden md:block"
-        />
-        Dengan <span class="text-blue-500">Percaya Diri</span>
+        Bangun <span
+          class="text-blue-500 [-webkit-text-stroke:_5px_#e2e8f0] [paint-order:stroke_fill]"
+          >Karir Teknologi</span
+        ><br class="hidden md:block" />
+        Dengan
+        <span
+          class="text-blue-500 [-webkit-text-stroke:_5px_#e2e8f0] [paint-order:stroke_fill]"
+          >Percaya Diri</span
+        >
       </h1>
       <p
         class="text-gray-300 text-base md:text-lg max-w-2xl mx-auto mt-8 mb-12 leading-relaxed"
@@ -481,7 +483,7 @@
         <h2
           class="text-brand-blue text-xl md:text-2xl font-bold font-inter tracking-tight"
         >
-        <img src="/BigLogo.png" alt="Skill Leap" class="h-8 md:h-9 w-auto" />
+          <img src="/BigLogo.png" alt="Skill Leap" class="h-8 md:h-9 w-auto" />
         </h2>
         <p class="text-gray-500 text-xs md:text-sm leading-relaxed max-w-sm">
           Platform pembelajaran berbasis AI yang dirancang untuk memvalidasi
