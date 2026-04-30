@@ -9,12 +9,12 @@ export const actions: Actions = {
 		const password = formData.get('password') as string;
 
 		if (!email || !password) {
-			return fail(400, { error: 'Email and password are required' });
+			return fail(400, { error: 'Email dan password harus diisi' });
 		}
 
 		const db = platform?.env.DB;
 		if (!db) {
-			return fail(500, { error: 'Database connection failed' });
+			return fail(500, { error: 'Gagal terhubung ke database' });
 		}
 
 		try {
@@ -22,13 +22,13 @@ export const actions: Actions = {
 			const user = await db.prepare('SELECT id, password FROM users WHERE email = ?').bind(email).first() as { id: string, password: string } | null;
 
 			if (!user) {
-				return fail(400, { error: 'Invalid email or password' });
+				return fail(400, { error: 'Email atau password salah' });
 			}
 
 			// Verify password (supports legacy plaintext and new hashes)
 			const isValid = await verifyPassword(password, user.password);
 			if (!isValid) {
-				return fail(400, { error: 'Invalid email or password' });
+				return fail(400, { error: 'Email atau password salah' });
 			}
 
 			// Set session cookie
@@ -43,7 +43,7 @@ export const actions: Actions = {
 
 		} catch (e) {
 			console.error('Login error:', e);
-			return fail(500, { error: 'Login failed. Please try again later.' });
+			return fail(500, { error: 'Login gagal. Silakan coba lagi nanti.' });
 		}
 
 		throw redirect(303, '/dashboard');

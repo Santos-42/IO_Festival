@@ -1,3 +1,7 @@
+<svelte:head>
+  <title>Quiz Review | Skill Leap</title>
+</svelte:head>
+
 <script lang="ts">
   import { ArrowLeft, ArrowRight, CheckCircle2, XCircle } from "lucide-svelte";
   import { fade, fly } from "svelte/transition";

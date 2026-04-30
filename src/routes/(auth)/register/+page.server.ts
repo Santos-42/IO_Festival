@@ -13,27 +13,35 @@ export const actions: Actions = {
 
 		// Basic validation
 		if (!name || !email || !password || !confirmPassword) {
-			return fail(400, { error: 'All fields are required' });
+			return fail(400, { error: 'Semua field harus diisi' });
 		}
 
 		if (password !== confirmPassword) {
-			return fail(400, { error: 'Passwords do not match' });
+			return fail(400, { error: 'Password dan konfirmasi tidak cocok' });
 		}
 
 		if (password.length < 6) {
-			return fail(400, { error: 'Password must be at least 6 characters long' });
+			return fail(400, { error: 'Password minimal 6 karakter' });
+		}
+
+		if (!/[a-z]/.test(password)) {
+			return fail(400, { error: 'Password harus mengandung minimal 1 huruf kecil' });
+		}
+
+		if (!/[A-Z]/.test(password)) {
+			return fail(400, { error: 'Password harus mengandung minimal 1 huruf besar' });
 		}
 
 		const db = platform?.env.DB;
 		if (!db) {
-			return fail(500, { error: 'Database connection failed' });
+			return fail(500, { error: 'Gagal terhubung ke database' });
 		}
 
 		try {
 			// Check if email already exists
 			const existingUser = await db.prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
 			if (existingUser) {
-				return fail(400, { error: 'Email already registered' });
+				return fail(400, { error: 'Email sudah terdaftar' });
 			}
 
 			// Create new user
@@ -58,7 +66,7 @@ export const actions: Actions = {
 
 		} catch (e) {
 			console.error('Registration error:', e);
-			return fail(500, { error: 'Registration failed. Please try again later.' });
+			return fail(500, { error: 'Registrasi gagal. Silakan coba lagi nanti.' });
 		}
 
 		throw redirect(303, '/dashboard');

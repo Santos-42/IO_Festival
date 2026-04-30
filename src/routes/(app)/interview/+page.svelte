@@ -1,3 +1,7 @@
+<svelte:head>
+  <title>AI Interview | Skill Leap</title>
+</svelte:head>
+
 <script lang="ts">
   import { sidebar } from "$lib/state/sidebar.svelte";
   import {

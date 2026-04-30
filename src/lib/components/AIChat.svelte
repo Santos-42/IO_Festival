@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Sparkles, X, Send, PlusCircle } from "lucide-svelte";
+  import { X, Send, PlusCircle } from "lucide-svelte";
   import { fade, scale, slide } from "svelte/transition";
   import { onMount, tick } from "svelte";
   import { goto, invalidateAll } from "$app/navigation";
@@ -164,7 +164,9 @@
         class="bg-blue-600 p-4 text-white flex justify-between items-center shadow-md"
       >
         <div class="flex items-center space-x-2">
-          <Sparkles size={18} />
+          <div class="w-7 h-7 bg-white rounded-full border-2 border-blue-400 shadow flex items-center justify-center overflow-hidden">
+            <img src="/SmallLogo.png" alt="AI" class="w-5 h-5" />
+          </div>
           <span class="font-bold text-sm">AI Skill Assistant</span>
         </div>
         <button
@@ -259,12 +261,12 @@
   <!-- Floating Action Button -->
   <button
     onclick={toggleChat}
-    class="w-16 h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center shadow-xl shadow-blue-200 transition-all transform hover:scale-110 active:scale-95"
+    class="w-16 h-16 bg-white border-2 border-blue-600 rounded-full flex items-center justify-center shadow-xl shadow-blue-200 transition-all transform hover:scale-110 active:scale-95"
   >
     {#if isOpen}
-      <X size={28} />
+      <X size={28} class="text-blue-600" />
     {:else}
-      <Sparkles size={28} />
+      <img src="/SmallLogo.png" alt="AI Chat" class="w-8 h-8" />
     {/if}
   </button>
 </div>

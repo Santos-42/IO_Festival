@@ -30,7 +30,7 @@
     <div class="w-full max-w-[400px]">
       <!-- Header -->
       <div class="mb-5">
-        <h2 class="text-sm font-bold text-gray-900 mb-0.5">Skill Leap</h2>
+        <img src="/BigLogo.png" alt="Skill Leap" class="h-8 w-auto mb-1" />
         <h1
           class="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight mb-1.5 tracking-tight"
         >
@@ -50,33 +50,6 @@
           {form.error}
         </div>
       {/if}
-
-      <!-- Social Sign Up -->
-      <div class="grid grid-cols-2 gap-3 mb-5">
-        <button
-          type="button"
-          class="flex items-center justify-center py-2.5 px-4 border border-gray-200 bg-white rounded-full hover:bg-gray-50 transition-colors text-[13px] font-bold text-[#374151] shadow-sm"
-        >
-          Google
-        </button>
-        <button
-          type="button"
-          class="flex items-center justify-center py-2.5 px-4 border border-gray-200 bg-white rounded-full hover:bg-gray-50 transition-colors text-[13px] font-bold text-[#374151] shadow-sm"
-        >
-          Facebook
-        </button>
-      </div>
-
-      <!-- Divider -->
-      <div class="relative flex items-center mb-5">
-        <div class="flex-grow border-t border-[#F3F4F6]"></div>
-        <span
-          class="flex-shrink-0 px-4 text-[10px] font-bold text-[#9CA3AF] uppercase tracking-[0.1em]"
-        >
-          Or register with email
-        </span>
-        <div class="flex-grow border-t border-[#F3F4F6]"></div>
-      </div>
 
       <!-- Form -->
       <form 
@@ -172,6 +145,9 @@
                 {/if}
               </button>
             </div>
+            <p class="text-[11px] text-[#9CA3AF] ml-1 mt-1">
+              Minimal 6 karakter, 1 huruf besar, dan 1 huruf kecil
+            </p>
           </div>
           <div class="space-y-1.5">
             <label
@@ -251,17 +227,8 @@
 
   <!-- Right Column: Visual -->
   <div
-    class="hidden md:flex flex-col justify-center items-center bg-white border-l border-gray-50 relative overflow-hidden"
+    class="hidden md:flex flex-col justify-center items-center relative overflow-hidden"
   >
-    <!-- Subtle Background Elements -->
-    <div
-      class="absolute -bottom-20 -right-20 w-80 h-80 bg-blue-50 rounded-full blur-3xl opacity-50"
-    ></div>
-    <div
-      class="absolute -top-20 -left-20 w-80 h-80 bg-blue-50 rounded-full blur-3xl opacity-50"
-    ></div>
-    <div class="relative z-10 text-center px-12">
-      <h3 class="text-2xl font-bold text-gray-200">Visual Space</h3>
-    </div>
+    <img src="/signup.png" alt="Sign Up" class="w-full h-full object-cover" />
   </div>
 </div>

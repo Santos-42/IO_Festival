@@ -1,3 +1,7 @@
+<svelte:head>
+  <title>Roadmap | Skill Leap</title>
+</svelte:head>
+
 <script lang="ts">
   import AIChat from "$lib/components/AIChat.svelte";
   import { onMount } from "svelte";

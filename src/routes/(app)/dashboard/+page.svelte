@@ -1,3 +1,7 @@
+<svelte:head>
+  <title>Dashboard | Skill Leap</title>
+</svelte:head>
+
 <script lang="ts">
   import { sidebar } from "$lib/state/sidebar.svelte";
   import AIChat from "$lib/components/AIChat.svelte";

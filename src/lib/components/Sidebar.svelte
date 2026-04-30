@@ -70,9 +70,9 @@
 
   <div class="p-6 flex items-center justify-center h-20 transition-all">
     {#if sidebar.isCollapsed}
-      <h1 class="text-2xl font-bold text-blue-600" in:fade={{ duration: 200, delay: 100 }}>SL</h1>
+      <img src="/SmallLogo.png" alt="Skill Leap" class="h-10 w-auto" in:fade={{ duration: 200, delay: 100 }} />
     {:else}
-      <h1 class="text-2xl font-bold text-blue-600 whitespace-nowrap" in:fade={{ duration: 200, delay: 100 }}>Skill Leap</h1>
+      <img src="/BigLogo.png" alt="Skill Leap" class="h-10 w-auto" in:fade={{ duration: 200, delay: 100 }} />
     {/if}
   </div>
 
@@ -109,7 +109,7 @@
     <form method="POST" action="/logout" use:enhance class="w-full">
       <button
         type="submit"
-        class="w-full flex items-center py-3 text-gray-500 hover:bg-gray-50 rounded-2xl transition-all {sidebar.isCollapsed ? 'justify-center px-0' : 'space-x-3 px-4'}"
+        class="w-full flex items-center py-3 text-red-500 hover:bg-red-50 rounded-2xl transition-all {sidebar.isCollapsed ? 'justify-center px-0' : 'space-x-3 px-4'}"
         title={sidebar.isCollapsed ? "Log out" : ""}
       >
         <LogOut size={20} class="shrink-0" />

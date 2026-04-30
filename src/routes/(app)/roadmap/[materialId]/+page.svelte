@@ -1,3 +1,7 @@
+<svelte:head>
+  <title>{data.material.title} | Skill Leap</title>
+</svelte:head>
+
 <script lang="ts">
   import {
     Play,

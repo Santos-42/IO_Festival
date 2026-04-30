@@ -1,3 +1,7 @@
+<svelte:head>
+  <title>Quiz | {data.moduleName} | Skill Leap</title>
+</svelte:head>
+
 <script lang="ts">
   import { ArrowLeft, Clock, CheckCircle, XCircle, AlertTriangle, Loader2 } from "lucide-svelte";
   import { fade, fly } from "svelte/transition";

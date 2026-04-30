@@ -95,9 +95,9 @@
     >
       <a
         href="#home"
-        class="text-brand-blue text-xl md:text-2xl font-bold font-inter tracking-tight hover:opacity-80 transition-opacity"
+        class="hover:opacity-80 transition-opacity"
       >
-        Skill Leap
+        <img src="/BigLogo.png" alt="Skill Leap" class="h-8 md:h-9 w-auto" />
       </a>
 
       <!-- Desktop Nav -->
@@ -193,31 +193,11 @@
   <!-- Hero Section -->
   <section
     id="home"
-    class="relative bg-slate-950 py-20 md:py-24 lg:py-32 flex items-center min-h-[80vh] pt-36 md:pt-40 lg:pt-44"
+    class="relative py-20 md:py-24 lg:py-32 flex items-center min-h-[80vh] pt-36 md:pt-40 lg:pt-44 bg-cover bg-center bg-no-repeat"
+    style="background-image: url('/landingpage.png')"
   >
-    <!-- Tech Background -->
-    <div class="absolute inset-0 opacity-10 pointer-events-none">
-      <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <pattern
-            id="tech-grid"
-            width="40"
-            height="40"
-            patternUnits="userSpaceOnUse"
-          >
-            <path
-              d="M 40 0 L 0 0 0 40"
-              fill="none"
-              stroke="#3b82f6"
-              stroke-width="0.3"
-            />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#tech-grid)" />
-      </svg>
-    </div>
     <div
-      class="absolute inset-0 bg-gradient-to-b from-slate-950 via-transparent to-slate-950 pointer-events-none"
+      class="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-transparent to-slate-950/80 pointer-events-none"
     ></div>
 
     <div
@@ -501,7 +481,7 @@
         <h2
           class="text-brand-blue text-xl md:text-2xl font-bold font-inter tracking-tight"
         >
-          Skill Leap
+        <img src="/BigLogo.png" alt="Skill Leap" class="h-8 md:h-9 w-auto" />
         </h2>
         <p class="text-gray-500 text-xs md:text-sm leading-relaxed max-w-sm">
           Platform pembelajaran berbasis AI yang dirancang untuk memvalidasi

@@ -1,3 +1,7 @@
+<svelte:head>
+  <title>Checkpoint Review | {data.materialTitle} | Skill Leap</title>
+</svelte:head>
+
 <script lang="ts">
   import { ArrowLeft, CheckCircle2, XCircle, Clock } from "lucide-svelte";
   import { fade, fly } from "svelte/transition";
